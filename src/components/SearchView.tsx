@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { searchCodes } from "../api";
+import { useListKeyNav } from "../hooks/useListKeyNav";
 import { useAppData } from "../state";
 import type { SearchResult } from "../types";
 import { CodeRow } from "./CodeRow";
@@ -54,6 +55,8 @@ export function SearchView({ selectedCode, onSelect }: Props) {
   }, [query]);
 
   const trimmed = query.trim();
+
+  useListKeyNav(results, selectedCode, onSelect);
 
   return (
     <div className="list-pane">

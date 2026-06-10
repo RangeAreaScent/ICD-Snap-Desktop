@@ -4,25 +4,31 @@
 - **App:** ICD Snap
 - **Platform:** desktop
 - **Wave:** 1
-- **Stage:** 3 release  (0 spec / 1 scaffold / 2 features / 3 release / shipped)
-- **Last updated:** 2026-05-30
+- **Stage:** 2 features  (0 spec / 1 scaffold / 2 features / 3 release / shipped) — bumped back from 3 release after Phase A~D + Polish UX work on 2026-06-09; v1.0.0 draft is now stale
+- **Last updated:** 2026-06-09
 - **Repo:** https://github.com/RangeAreaScent/ICD-Snap-Desktop
-- **Latest release:** v1.0.0 (draft, 2026-05-29) — 4 artifacts attached (universal DMG, MSI, NSIS .exe, .app.tar.gz). Awaiting user publish click.
-- **Latest CI:** success on v1.0.0. **Note:** workflow has since been simplified to Windows-only on CI (commit `4b1c1d0`); Mac DMG is now produced locally via `tauri build` + `hdiutil` fallback (see §13 gotcha #6).
+- **Latest release:** v1.0.0 (draft, 2026-05-29) — **STALE.** Pre-dates Phase A~D + Polish (2026-06-09). Recommend NOT publishing this draft; cut a v1.1.0 instead.
+- **Latest CI:** success on v1.0.0 (Windows-only, commit `4b1c1d0`); Mac DMG built locally via `tauri build` + `hdiutil` fallback (§13 gotcha #6).
 - **Bundle id:** com.ryan.icdsnap
 - **Dataset:** `icd10cm_2026.sqlite`, ~98K rows (74,714 billable), 40 MB, license: public domain (CDC / NCHS)
 - **Dataset update cadence:** Annual (Oct 1, U.S. FY rollover), next refresh window 2026-10 for FY 2027
-- **Deviations from playbook:** none
+- **Deviations from playbook (4-tab ICD vs Tariff UK 6-tab reference):**
+  - No Calculator tab (ICD is reference-only, no dollar math)
+  - No Browse tab (chapter browse deferred — FTS5 search covers most discovery)
+  - No domain mode toggle (ICD has no NI-Mode-equivalent; ⌘K Actions group removed accordingly)
+  - Tabs ⌘1~3 + ⌘, (Settings on standard macOS Preferences key only, no ⌘4)
+  - ⌘K palette: no Recent group (state.tsx has no `recents`), no Actions group
+  - DatabaseModal cites **Public Domain** rather than Tariff UK's OGL v3.0
 - **Active blockers:**
   - Apple Developer cert not acquired → Mac DMG unsigned, Gatekeeper warning on other Macs
   - Windows code-signing cert not acquired → SmartScreen warning on install
   - Lemon Squeezy store + product not created → license activation untested end-to-end
   - `product_id` check in `license.rs` still a no-op (constant = 0)
 - **Next 3 steps:**
-  1. Publish the v1.0.0 draft release on GitHub (Mac universal DMG attached locally; Windows artifacts from CI)
-  2. Create the Lemon Squeezy store + ICD Snap Premium product (activation limit = 2), then set the `product_id` constant per HANDOFF Appendix B
-  3. Decide timing of Apple Developer enrollment → first signed/notarized Mac DMG
-- **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/`, any Lemon Squeezy milestone (product created, first key sold), any signing config change, any new dataset bundled
+  1. Manual smoke test of Phase A~D + Polish (keyboard nav, ⌘K palette, native menu, status bar, Favorites multi-select, 3 modals across 7 themes) — see Phase D/Step 4 smoke checklists in conversation logs
+  2. Bump to v1.1.0 (4 places — Cargo.toml / tauri.conf.json / package.json / HANDOFF header), discard v1.0.0 draft via `gh release delete v1.0.0 --cleanup-tag --yes`, tag + push v1.1.0
+  3. Resume original release path — Lemon Squeezy setup + Apple Developer enrollment decision
+- **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/` / `src-tauri/src/menu.rs`, any Lemon Squeezy milestone, any signing config change, any new dataset bundled, any further IMPROVEMENT_PLAN Polish round
 <!-- snap-series:manager-block:end -->
 
 > Last updated 2026-05-29. App version 1.0.0.

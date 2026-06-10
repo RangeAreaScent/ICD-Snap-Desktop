@@ -1,6 +1,7 @@
 mod abbreviations;
 mod icd;
 mod license;
+mod menu;
 mod pdf;
 mod store;
 
@@ -113,7 +114,11 @@ pub fn run() {
                 .app_data_dir()
                 .expect("could not resolve app data directory");
             app.manage(AppState { db_path, data_dir });
+            menu::install(app.handle())?;
             Ok(())
+        })
+        .on_menu_event(|app, event| {
+            menu::handle(app, event.id().as_ref());
         })
         .invoke_handler(tauri::generate_handler![
             search_codes,

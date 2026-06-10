@@ -6,9 +6,10 @@ import { AddToCollectionModal } from "./AddToCollectionModal";
 
 interface Props {
   code: string | null;
+  onClose?: () => void;
 }
 
-export function CodeDetailView({ code }: Props) {
+export function CodeDetailView({ code, onClose }: Props) {
   const [detail, setDetail] = useState<CodeDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +54,7 @@ export function CodeDetailView({ code }: Props) {
   }
 
   if (!code) {
-    return (
-      <div className="detail-pane detail-pane--empty">
-        <p>Select a code to see its details.</p>
-      </div>
-    );
+    return <EmptyDetail />;
   }
   if (loading) {
     return (
@@ -99,6 +96,11 @@ export function CodeDetailView({ code }: Props) {
 
   return (
     <div className="detail-pane">
+      {onClose && (
+        <button className="detail-back" onClick={onClose} title="Back to list">
+          ‹ Back
+        </button>
+      )}
       <div className="detail-scroll">
         <div className="detail-hero">
           <div className="detail-hero__actions">
@@ -179,6 +181,31 @@ export function CodeDetailView({ code }: Props) {
           onClose={() => setAddingToCollection(false)}
         />
       )}
+    </div>
+  );
+}
+
+/** Phase B — friendlier empty state with keyboard hints. */
+function EmptyDetail() {
+  const isMac =
+    typeof navigator !== "undefined" &&
+    /Mac/i.test(navigator.platform || navigator.userAgent);
+  const mod = isMac ? "⌘" : "Ctrl";
+  return (
+    <div className="detail-pane detail-pane--empty detail-empty">
+      <div className="detail-empty__title">Select a code</div>
+      <div className="detail-empty__hint">
+        Use the list on the left, or try these shortcuts:
+      </div>
+      <ul className="detail-empty__keys">
+        <li><kbd>↑</kbd> <kbd>↓</kbd> Move through results</li>
+        <li><kbd>Esc</kbd> Back to search</li>
+        <li><kbd>{mod}K</kbd> Command palette</li>
+        <li><kbd>{mod}F</kbd> Focus search</li>
+        <li><kbd>{mod}C</kbd> Copy the selected code</li>
+        <li><kbd>{mod}D</kbd> Add to favorites</li>
+        <li><kbd>{mod}1</kbd>–<kbd>{mod}4</kbd> Jump between sections</li>
+      </ul>
     </div>
   );
 }
