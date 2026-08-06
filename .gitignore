@@ -38,3 +38,6 @@ ICD Snap_Win/
 # Claude / agent metadata
 .claude/
 
+# Apple signing/notarization secrets (see HANDOFF.md §6.5)
+.env
+

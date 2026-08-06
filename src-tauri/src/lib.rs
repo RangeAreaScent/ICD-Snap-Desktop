@@ -83,20 +83,13 @@ fn license_validate(state: tauri::State<'_, AppState>) -> license::LicenseState 
     license::validate(&state.data_dir)
 }
 
-/// Releases this machine's activation slot.
+/// Forgets the locally stored license key. Gumroad has no API to release a
+/// used activation slot server-side, so this only clears local state.
 #[tauri::command]
 fn license_deactivate(
     state: tauri::State<'_, AppState>,
 ) -> Result<license::LicenseState, String> {
     license::deactivate(&state.data_dir)
-}
-
-/// Toggles the hidden premium override (demo / testing unlock).
-#[tauri::command]
-fn license_toggle_override(
-    state: tauri::State<'_, AppState>,
-) -> Result<license::LicenseState, String> {
-    license::toggle_override(&state.data_dir)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -130,8 +123,7 @@ pub fn run() {
             license_status,
             license_activate,
             license_validate,
-            license_deactivate,
-            license_toggle_override
+            license_deactivate
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

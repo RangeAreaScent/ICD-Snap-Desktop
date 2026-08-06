@@ -1,52 +1,71 @@
-//! Premium license activation via the Lemon Squeezy license API.
+//! Premium license verification via the Gumroad license API.
 //!
-//! Flow: the user enters a key -> `activate` registers this machine as an
-//! "instance" (Lemon Squeezy enforces the per-key device limit server-side).
-//! The key + instance id are stored locally; `validate` re-checks on launch
-//! but tolerates being offline so a verified user is never locked out by a
-//! flaky network or a Lemon Squeezy outage.
+//! Gumroad has no server-side "activation slot" concept the way Lemon
+//! Squeezy does — `licenses/verify` just checks a key against a product
+//! and, optionally, increments a usage counter (`uses`). To approximate a
+//! per-key device cap, `activate` does a read-only check first
+//! (`increment_uses_count=false`) and only increments once this machine is
+//! actually under the cap. This is a client-side approximation, same as
+//! any such check — a determined user could bypass it.
 //!
-//! A separate "override" flag (toggled by the hidden version-tap rhythm) is
-//! OR-ed into the unlocked state for demos / testing — it never touches the
-//! real license, mirroring the iOS app's debug unlock.
+//! There is no Gumroad API to release/deactivate a slot server-side.
+//! `deactivate` below only clears the locally stored license.
+//!
+//! No manual/hidden unlock override exists here (the iOS app had one via a
+//! hidden tap gesture and removed it 2026-08-05 as an App Store review
+//! risk — see the iOS project's `GOTCHAS.md` §20). Don't reintroduce one.
 
 use crate::store;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::time::Duration;
 
-const ACTIVATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/activate";
-const VALIDATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/validate";
-const DEACTIVATE_URL: &str = "https://api.lemonsqueezy.com/v1/licenses/deactivate";
+const VERIFY_URL: &str = "https://api.gumroad.com/v2/licenses/verify";
 const STORE_NAME: &str = "license";
-const OVERRIDE_STORE: &str = "premium_override";
-const INSTANCE_NAME: &str = "ICD Snap Desktop";
+
+/// From the Gumroad product dashboard for "ICD Snap" — see HANDOFF.md §10.
+const PRODUCT_ID: &str = "2vVCDdu-jffvO16Ks-FpGA==";
+
+/// How many machines a single license key may activate. Enforced
+/// client-side only (see module doc) — tune to whatever policy you want.
+const MAX_ACTIVATIONS: u64 = 2;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LicenseState {
     pub unlocked: bool,
     pub key: Option<String>,
-    pub instance_id: Option<String>,
 }
 
-// --- partial Lemon Squeezy response shapes ---
-
-#[derive(Deserialize)]
-struct ActivateResp {
-    activated: bool,
-    error: Option<String>,
-    instance: Option<Instance>,
-}
-
-#[derive(Deserialize)]
-struct Instance {
-    id: String,
+#[derive(Deserialize, Default)]
+struct VerifyResp {
+    success: bool,
+    #[serde(default)]
+    uses: u64,
+    message: Option<String>,
+    purchase: Option<Purchase>,
 }
 
 #[derive(Deserialize)]
-struct ValidateResp {
-    valid: bool,
+struct Purchase {
+    #[serde(default)]
+    refunded: bool,
+    #[serde(default)]
+    chargebacked: bool,
+    #[serde(default)]
+    disputed: bool,
+    subscription_cancelled_at: Option<String>,
+    subscription_failed_at: Option<String>,
+}
+
+impl Purchase {
+    fn is_valid(&self) -> bool {
+        !self.refunded
+            && !self.chargebacked
+            && !self.disputed
+            && self.subscription_cancelled_at.is_none()
+            && self.subscription_failed_at.is_none()
+    }
 }
 
 fn save(dir: &Path, state: &LicenseState) -> Result<(), String> {
@@ -54,126 +73,109 @@ fn save(dir: &Path, state: &LicenseState) -> Result<(), String> {
     store::write(dir, STORE_NAME, &json)
 }
 
-/// Reads the stored real license (no override, no network).
-fn load_license(dir: &Path) -> LicenseState {
+fn load(dir: &Path) -> LicenseState {
     match store::read(dir, STORE_NAME) {
         Ok(Some(raw)) => serde_json::from_str(&raw).unwrap_or_default(),
         _ => LicenseState::default(),
     }
 }
 
-fn override_on(dir: &Path) -> bool {
-    matches!(store::read(dir, OVERRIDE_STORE), Ok(Some(raw)) if raw.trim() == "true")
-}
-
-fn set_override(dir: &Path, on: bool) -> Result<(), String> {
-    store::write(dir, OVERRIDE_STORE, if on { "true" } else { "false" })
-}
-
-/// Real license OR the demo override.
-fn with_override(dir: &Path, mut s: LicenseState) -> LicenseState {
-    if override_on(dir) {
-        s.unlocked = true;
-    }
-    s
-}
-
-/// Instant launch state: stored license OR override, no network.
+/// Instant launch state: stored license, no network.
 pub fn status(dir: &Path) -> LicenseState {
-    with_override(dir, load_license(dir))
+    load(dir)
 }
 
-fn post_form(url: &str, fields: &[(&str, &str)]) -> Result<String, String> {
+fn verify(key: &str, increment: bool) -> Result<VerifyResp, String> {
     let agent = ureq::AgentBuilder::new()
         .timeout(Duration::from_secs(12))
         .build();
-    match agent
-        .post(url)
+    let fields: &[(&str, &str)] = &[
+        ("product_id", PRODUCT_ID),
+        ("license_key", key),
+        ("increment_uses_count", if increment { "true" } else { "false" }),
+    ];
+    let body = match agent
+        .post(VERIFY_URL)
         .set("Accept", "application/json")
         .send_form(fields)
     {
-        Ok(resp) => resp.into_string().map_err(|e| e.to_string()),
-        // Lemon Squeezy returns useful JSON bodies on 4xx responses too.
-        Err(ureq::Error::Status(_, resp)) => resp.into_string().map_err(|e| e.to_string()),
-        Err(e) => Err(format!("Could not reach the license server: {e}")),
-    }
+        Ok(resp) => resp.into_string().map_err(|e| e.to_string())?,
+        // Gumroad returns a JSON body (success: false, message: ...) on
+        // 404/422 for a bad key too — read it instead of just erroring out.
+        Err(ureq::Error::Status(_, resp)) => resp.into_string().map_err(|e| e.to_string())?,
+        Err(e) => return Err(format!("Could not reach the license server: {e}")),
+    };
+    serde_json::from_str(&body)
+        .map_err(|_| "Unexpected response from the license server.".to_string())
 }
 
+/// Activates a key for this machine: a read-only check against
+/// `MAX_ACTIVATIONS` first, then a real increment if under the cap.
 pub fn activate(dir: &Path, key: &str) -> Result<LicenseState, String> {
     let key = key.trim();
     if key.is_empty() {
         return Err("Please enter a license key.".into());
     }
 
-    let body = post_form(
-        ACTIVATE_URL,
-        &[("license_key", key), ("instance_name", INSTANCE_NAME)],
-    )?;
-    let resp: ActivateResp = serde_json::from_str(&body)
-        .map_err(|_| "Unexpected response from the license server.".to_string())?;
+    let peek = verify(key, false)?;
+    if !peek.success {
+        return Err(peek
+            .message
+            .unwrap_or_else(|| "This license key could not be verified.".into()));
+    }
+    if let Some(p) = &peek.purchase {
+        if !p.is_valid() {
+            return Err("This license is no longer valid (refunded or cancelled).".into());
+        }
+    }
+    if peek.uses >= MAX_ACTIVATIONS {
+        return Err(format!(
+            "This license key is already active on {MAX_ACTIVATIONS} device(s), the maximum allowed."
+        ));
+    }
 
-    if !resp.activated {
-        return Err(resp
-            .error
+    let confirmed = verify(key, true)?;
+    if !confirmed.success {
+        return Err(confirmed
+            .message
             .unwrap_or_else(|| "This license key could not be activated.".into()));
     }
 
     let state = LicenseState {
         unlocked: true,
         key: Some(key.to_string()),
-        instance_id: resp.instance.map(|i| i.id),
     };
     save(dir, &state)?;
-    Ok(with_override(dir, state))
+    Ok(state)
 }
 
-/// Re-checks the stored license. Network failures keep the existing state
-/// (grace period); only an explicit "invalid" verdict locks premium. The
-/// demo override is always OR-ed in afterwards.
+/// Re-checks the stored license without consuming another activation slot
+/// (`increment_uses_count=false`). Network failures / unparseable bodies
+/// keep the existing state (grace period); only an explicit invalid
+/// verdict locks premium.
 pub fn validate(dir: &Path) -> LicenseState {
-    let stored = load_license(dir);
-
-    let real = match (stored.key.clone(), stored.instance_id.clone()) {
-        (Some(key), Some(instance_id)) => {
-            match post_form(
-                VALIDATE_URL,
-                &[("license_key", &key), ("instance_id", &instance_id)],
-            ) {
-                // Offline / outage -> grace: keep the stored state.
-                Err(_) => stored,
-                Ok(body) => match serde_json::from_str::<ValidateResp>(&body) {
-                    Ok(resp) if resp.valid => stored,
-                    Ok(_) => {
-                        // Refunded / deactivated / revoked -> lock.
-                        let _ = save(dir, &LicenseState::default());
-                        LicenseState::default()
-                    }
-                    Err(_) => stored, // unparseable -> don't punish the user
-                },
-            }
-        }
-        _ => LicenseState::default(),
+    let stored = load(dir);
+    let Some(key) = stored.key.clone() else {
+        return LicenseState::default();
     };
 
-    with_override(dir, real)
-}
-
-/// Releases this machine's activation slot so the key can be used elsewhere.
-pub fn deactivate(dir: &Path) -> Result<LicenseState, String> {
-    let stored = load_license(dir);
-    if let (Some(key), Some(instance_id)) = (&stored.key, &stored.instance_id) {
-        // Best-effort: even if the call fails, clear the local license.
-        let _ = post_form(
-            DEACTIVATE_URL,
-            &[("license_key", key), ("instance_id", instance_id)],
-        );
+    match verify(&key, false) {
+        Err(_) => stored, // offline / outage -> grace
+        Ok(resp) => {
+            let ok = resp.success && resp.purchase.as_ref().is_none_or(Purchase::is_valid);
+            if ok {
+                stored
+            } else {
+                let _ = save(dir, &LicenseState::default());
+                LicenseState::default()
+            }
+        }
     }
-    save(dir, &LicenseState::default())?;
-    Ok(with_override(dir, LicenseState::default()))
 }
 
-/// Flips the hidden demo/testing override. Returns the new effective state.
-pub fn toggle_override(dir: &Path) -> Result<LicenseState, String> {
-    set_override(dir, !override_on(dir))?;
-    Ok(status(dir))
+/// Clears the locally stored license. Does NOT free a slot on Gumroad's
+/// side — see module doc, there is no API for that.
+pub fn deactivate(dir: &Path) -> Result<LicenseState, String> {
+    save(dir, &LicenseState::default())?;
+    Ok(LicenseState::default())
 }

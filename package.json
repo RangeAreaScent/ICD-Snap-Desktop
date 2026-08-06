@@ -1,13 +1,15 @@
 {
   "name": "icd-snap-desktop",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:mac": "set -a; [ -f .env ] && . ./.env; set +a; tauri build",
+    "tauri:mac:universal": "set -a; [ -f .env ] && . ./.env; set +a; tauri build --target universal-apple-darwin"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",

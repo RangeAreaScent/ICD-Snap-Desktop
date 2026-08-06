@@ -4,11 +4,11 @@
 - **App:** ICD Snap
 - **Platform:** desktop
 - **Wave:** 1
-- **Stage:** 2 features  (0 spec / 1 scaffold / 2 features / 3 release / shipped) — bumped back from 3 release after Phase A~D + Polish UX work on 2026-06-09; v1.0.0 draft is now stale
-- **Last updated:** 2026-06-09
+- **Stage:** 2 features  (0 spec / 1 scaffold / 2 features / 3 release / shipped) — bumped back from 3 release after Phase A~D + Polish UX work on 2026-06-09; the Phase A~D + Polish UI work itself is still un-smoke-tested and still needs its own v1.1.0 (see "Next 3 steps" — unrelated to the v1.0.1 bump below)
+- **Last updated:** 2026-08-06
 - **Repo:** https://github.com/RangeAreaScent/ICD-Snap-Desktop
-- **Latest release:** v1.0.0 (draft, 2026-05-29) — **STALE.** Pre-dates Phase A~D + Polish (2026-06-09). Recommend NOT publishing this draft; cut a v1.1.0 instead.
-- **Latest CI:** success on v1.0.0 (Windows-only, commit `4b1c1d0`); Mac DMG built locally via `tauri build` + `hdiutil` fallback (§13 gotcha #6).
+- **Latest release:** v1.0.0 — **published** 2026-08-06 (was a draft since 2026-05-29; still pre-dates Phase A~D + Polish, but the user chose to publish it anyway for real cross-Mac testing convenience — see §6.5). A signed + notarized universal Mac DMG is live on this release and linked from the marketing site (`doie.cc/snap/icd-snap`, macOS "Download for Mac" badge → direct GitHub asset). v1.0.1 (Gumroad + signing/override fixes below) is about to be tagged on top of this — same release lineage, not a separate stale draft.
+- **Latest CI:** success on v1.0.0 (Windows-only, commit `4b1c1d0`, **pre-dates** the 2026-08-06 Gumroad/override changes — that Windows .msi/.exe is stale, still Lemon Squeezy + hidden override, unsigned). v1.0.1 CI run is what will pick up today's changes. Mac DMG for v1.0.0 built locally via `tauri build` + `hdiutil` fallback (§13 gotcha #6), signed + notarized successfully with the DOIE LLC Developer ID cert (§6.5 verify recipe passed: codesign / spctl / stapler all green).
 - **Bundle id:** com.ryan.icdsnap
 - **Dataset:** `icd10cm_2026.sqlite`, ~98K rows (74,714 billable), 40 MB, license: public domain (CDC / NCHS)
 - **Dataset update cadence:** Annual (Oct 1, U.S. FY rollover), next refresh window 2026-10 for FY 2027
@@ -19,19 +19,20 @@
   - Tabs ⌘1~3 + ⌘, (Settings on standard macOS Preferences key only, no ⌘4)
   - ⌘K palette: no Recent group (state.tsx has no `recents`), no Actions group
   - DatabaseModal cites **Public Domain** rather than Tariff UK's OGL v3.0
-- **Active blockers:**
-  - Apple Developer cert not acquired → Mac DMG unsigned, Gatekeeper warning on other Macs
-  - Windows code-signing cert not acquired → SmartScreen warning on install
-  - Lemon Squeezy store + product not created → license activation untested end-to-end
-  - `product_id` check in `license.rs` still a no-op (constant = 0)
+- **Active blockers:** (mostly cleared 2026-08-05/06)
+  - ~~Apple Developer cert not acquired~~ **DONE, verified end-to-end 2026-08-06.** DOIE LLC account active, Team ID `8636DYWLSV` (same team as the iOS app and the rest of the portfolio). The "Developer ID Application" cert already exists in Keychain (shared with mMDd/PasteLight, not newly generated), `.env` wired up (§6.5). A real universal build was signed + notarized + stapled successfully; `codesign -dv` / `spctl -a -vv` (→ "accepted", "Notarized Developer ID") / `xcrun stapler validate` (→ "worked!") all passed.
+  - Windows code-signing cert not acquired → SmartScreen warning on install. Separate, unrelated purchase from the Apple side — see §6.5.
+  - **Monetization switched from Lemon Squeezy to Gumroad** (2026-08-05) — `license.rs` was rewritten for Gumroad's `licenses/verify` API (see §10, rewritten). `PRODUCT_ID` in `license.rs` is set to `2vVCDdu-jffvO16Ks-FpGA==` — confirm this matches the real Gumroad product before relying on it; license activation is otherwise still untested end-to-end.
+  - The hidden `SecretTapDetector`-equivalent premium override (`useSecretRhythm` in `SettingsView.tsx` + `toggle_override` in `license.rs`) was **removed** 2026-08-05, same reasoning as the iOS app's removal (silent free bypass of the paywall for anyone who found the gesture) — see §7 and the iOS project's `GOTCHAS.md` §20.
+  - `ICD Snap_Win/` (a nested, gitignored, undocumented copy of this whole project) is **stale** — it predates Phase A~D + Polish and now also predates the Gumroad switch. It was NOT updated as part of the 2026-08-05 changes. It doesn't appear to be part of the actual build path (§6.3 says clone fresh onto the Windows machine; §6.4 CI builds Windows from this repo directly) — worth confirming it's unused and deleting it, since a second `license.rs` sitting around with the old Lemon Squeezy + hidden-override code is exactly the kind of stale copy that gets accidentally shipped later.
 - **Next 3 steps:**
-  1. Manual smoke test of Phase A~D + Polish (keyboard nav, ⌘K palette, native menu, status bar, Favorites multi-select, 3 modals across 7 themes) — see Phase D/Step 4 smoke checklists in conversation logs
-  2. Bump to v1.1.0 (4 places — Cargo.toml / tauri.conf.json / package.json / HANDOFF header), discard v1.0.0 draft via `gh release delete v1.0.0 --cleanup-tag --yes`, tag + push v1.1.0
-  3. Resume original release path — Lemon Squeezy setup + Apple Developer enrollment decision
-- **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/` / `src-tauri/src/menu.rs`, any Lemon Squeezy milestone, any signing config change, any new dataset bundled, any further IMPROVEMENT_PLAN Polish round
+  1. **In progress 2026-08-06:** bumped to v1.0.1 (4 places), tagging + pushing now to trigger the Windows CI build with today's Gumroad + signing + hidden-override-removal changes — the v1.0.0 Windows .msi/.exe on the release is stale (pre-dates all of that). Still unsigned (Windows cert not acquired) — SmartScreen warning expected.
+  2. Create the Gumroad product for real (or confirm the existing one) and end-to-end test a real license key activation — `PRODUCT_ID` in `license.rs` is set to `2vVCDdu-jffvO16Ks-FpGA==` but that hasn't been confirmed against a real purchase yet.
+  3. Separately (unrelated to the above): manual smoke test of Phase A~D + Polish (keyboard nav, ⌘K palette, native menu, status bar, Favorites multi-select, 3 modals across 7 themes) — see Phase D/Step 4 smoke checklists in conversation logs — then bump to v1.1.0 for that UI work specifically.
+- **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/` / `src-tauri/src/menu.rs`, any Gumroad milestone, any signing config change, any new dataset bundled, any further IMPROVEMENT_PLAN Polish round
 <!-- snap-series:manager-block:end -->
 
-> Last updated 2026-05-29. App version 1.0.0.
+> Last updated 2026-08-06. App version 1.0.1.
 > Repository: <https://github.com/RangeAreaScent/ICD-Snap-Desktop>
 >
 > **Series context.** ICD Snap is one of ten apps in the Snap series
@@ -58,14 +59,14 @@
 7. [Architecture](#7-architecture)
 8. [Feature map — where each thing lives](#8-feature-map)
 9. [Configuration](#9-configuration)
-10. [Lemon Squeezy setup (the remaining external task)](#10-lemon-squeezy-setup)
+10. [Gumroad setup (the remaining external task)](#10-gumroad-setup)
 11. [Updating the ICD-10-CM data (FY 2027 and beyond)](#11-updating-the-icd-10-cm-data)
 12. [Maintenance recipes](#12-maintenance-recipes)
 13. [Known gotchas](#13-known-gotchas)
 14. [Testing](#14-testing)
 15. [Command cheatsheet](#15-command-cheatsheet)
 16. [Appendix A — Sample GitHub Actions CI](#appendix-a--sample-github-actions-ci)
-17. [Appendix B — Hardening Lemon Squeezy (product_id check)](#appendix-b--hardening-lemon-squeezy)
+17. [Appendix B — Hardening Gumroad (product_id check)](#appendix-b--hardening-gumroad)
 
 ---
 
@@ -93,9 +94,9 @@ subscription, works offline."
 - Premium = 4 themes **plus** unlimited favorites/collections (the iOS app's
   premium was cosmetic-only; we add freemium capacity limits to make
   premium an honest productivity upsell).
-- Monetization via **Lemon Squeezy license keys** with online activation,
-  not App Store IAP — avoids store fees and review cycles, works the same
-  on Mac and Windows.
+- Monetization via **Gumroad license keys** with online verification, not
+  App Store IAP — avoids store fees and review cycles, works the same on
+  Mac and Windows. (Switched from Lemon Squeezy 2026-08-05.)
 
 ---
 
@@ -109,8 +110,7 @@ subscription, works offline."
 | Read-only ICD data | `icd10cm_2026.sqlite` (~40 MB), bundled as a Tauri resource; FTS5 full-text + a prefix index. Accessed from Rust via `rusqlite` with the `bundled` feature (compiles SQLite + FTS5 in-tree). |
 | User data | Plain JSON files in the app data directory, written atomically (`store.rs`). |
 | Search abbreviations | Static dictionary (~125 entries) in `abbreviations.rs`, ported verbatim from the iOS app. |
-| Premium license | Lemon Squeezy license API (HTTP) via `ureq`. Online activate / validate / deactivate. Per-key device limit enforced by LS server-side. |
-| Hidden override | Separate stored flag; toggled by the secret version-tap rhythm. Effective unlock = real license OR override. Mirrors the iOS `SecretTapDetector`. |
+| Premium license | Gumroad `licenses/verify` API (HTTP) via `ureq`. Online activate / validate / (local-only) deactivate. Device cap approximated client-side via the `uses` counter Gumroad returns — no server-side "instance" concept like Lemon Squeezy had. |
 | PDF export | Native generation in Rust via `printpdf 0.8` (font subsetting). Bundled NanumGothic (SIL OFL 1.1) so Korean notes render correctly while keeping output small. |
 | CSV export | Built in JS, written to a user-chosen path via Tauri's dialog plugin + a Rust `write_text_file` command. |
 | Window zoom | `webview.setZoom()` for the text-size setting. |
@@ -175,7 +175,7 @@ ICD Snap_mac_win_app/
         ├── icd.rs                  ← SQLite + FTS5 search + detail fetch
         ├── abbreviations.rs        ← 125+ clinical abbreviation expansions
         ├── store.rs                ← atomic JSON document store
-        ├── license.rs              ← Lemon Squeezy + hidden override layer
+        ├── license.rs              ← Gumroad license verification
         └── pdf.rs                  ← collection → PDF (with subsetting + CJK)
 ```
 
@@ -388,17 +388,43 @@ that's currently shipped is what you'll find in the repo.
 
 Unsigned builds work but trigger scary warnings on other users' machines.
 
-#### macOS — Developer ID + notarization
-Requires an Apple Developer Program account ($99/yr) and a "Developer ID
-Application" certificate in your keychain. Set these env vars before
-`npm run tauri build`:
+#### macOS — Developer ID + notarization (done, 2026-08-05)
+
+DOIE LLC Apple Developer Program membership is active. The "Developer ID
+Application" cert (SHA1 `744CB0A90F5B7DCD1D4BCD924E3566C62F07555A`) is
+already in the login Keychain — it's the **same cert shared with mMDd and
+PasteLight**, not a new one generated for this app. Confirm it's there:
+
 ```bash
-export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-export APPLE_ID="you@example.com"
-export APPLE_PASSWORD="app-specific-password"   # not your Apple ID password
-export APPLE_TEAM_ID="TEAMID"
+security find-identity -v -p codesigning
+# → "Developer ID Application: DOIE LLC (8636DYWLSV)"
 ```
-Tauri then signs the `.app` and submits it for notarization in one step.
+
+Credentials live in a gitignored `.env` (see `.env.example` for the
+shape) with the real values copied from `~/Projects/mMDd/.env` — same
+team, same App Store Connect API key, reused across the portfolio.
+**Tauri's env var names differ from electron-builder's** (which mMDd and
+PasteLight use) even though the underlying credentials are identical —
+see the warning comment in `.env.example` before copying values over;
+mixing up `APPLE_API_KEY` (Key ID in Tauri vs. the `.p8` file path in
+electron-builder) silently breaks notarization.
+
+Build with the env vars sourced from `.env` automatically:
+```bash
+npm run tauri:mac              # Apple Silicon only, local debug (§6.1)
+npm run tauri:mac:universal    # universal build, what ships (§6.2)
+```
+Tauri signs the `.app` and submits it for notarization in one step.
+`APPLE_CERTIFICATE` / `APPLE_CERTIFICATE_PASSWORD` (base64 `.p12` +
+password) are only needed in CI, where there's no Keychain to pull the
+cert from — not needed for local builds.
+
+**Verify a fresh build** (same recipe as mMDd, see its `HANDOFF.md` §7):
+```bash
+codesign -dv --verbose=2 "src-tauri/target/release/bundle/macos/ICD Snap.app"   # authority chain
+spctl -a -vv "src-tauri/target/release/bundle/macos/ICD Snap.app"               # Gatekeeper accept
+xcrun stapler validate "src-tauri/target/release/bundle/macos/ICD Snap.app"     # notary ticket stapled
+```
 
 #### Windows — code signing certificate
 Requires a Code Signing Certificate (~$60–300/yr from Sectigo, DigiCert,
@@ -501,15 +527,19 @@ Modules in `src-tauri/src/`:
   `write(dir, name, content)`. Atomic write = write `<name>.json.tmp` →
   `rename` to `<name>.json`. Validates JSON before persisting so a crash
   can never leave a half-written file.
-- **`license.rs`** — Lemon Squeezy API client + the override layer:
-  - `status(dir)` — instant, no network. Loads stored license + ORs the
-    override.
-  - `validate(dir)` — calls LS `/validate`. Network failure → grace period
-    (keep current state). Explicit invalid → lock. Then ORs override.
-  - `activate(dir, key)` — LS `/activate`. On success stores
-    `{unlocked, key, instance_id}`.
-  - `deactivate(dir)` — LS `/deactivate` + clears local license file.
-  - `toggle_override(dir)` — flips a separate `premium_override.json`.
+- **`license.rs`** — Gumroad `licenses/verify` API client. No manual/hidden
+  override of any kind (removed 2026-08-05 — see the "Active blockers"
+  note at the top of this file):
+  - `status(dir)` — instant, no network. Loads the stored license only.
+  - `validate(dir)` — calls `verify` with `increment_uses_count=false`.
+    Network failure → grace period (keep current state). Explicit invalid
+    (bad key, refunded/chargebacked/disputed/cancelled purchase) → lock.
+  - `activate(dir, key)` — a read-only `verify` first to read the current
+    `uses` count against `MAX_ACTIVATIONS`, then a real `verify` with
+    `increment_uses_count=true` if under the cap. On success stores
+    `{unlocked, key}`.
+  - `deactivate(dir)` — clears the local license file only. Gumroad has no
+    API to release a used activation slot server-side.
 - **`pdf.rs`** — collection → PDF. Uses `printpdf 0.8` which auto-subsets
   embedded fonts (only the glyphs actually used are stored in the PDF).
   Always embeds NanumGothic Regular + Bold (cheap with subsetting; ASCII
@@ -559,10 +589,9 @@ Modules in `src-tauri/src/`:
 | `write_text_file` | JS → Rust | Write text to a user-picked path | `path`, `content` | `()` |
 | `export_pdf` | JS → Rust | Render a PDF from entries | `path`, `title`, `entries` | `()` |
 | `license_status` | JS → Rust | Instant load (no network) | — | `LicenseState` |
-| `license_activate` | JS → Rust | LS activate (online) | `key` | `LicenseState` |
-| `license_validate` | JS → Rust | LS validate (online + grace) | — | `LicenseState` |
-| `license_deactivate` | JS → Rust | LS deactivate + clear local | — | `LicenseState` |
-| `license_toggle_override` | JS → Rust | Flip the hidden override | — | `LicenseState` |
+| `license_activate` | JS → Rust | Gumroad verify + increment (online) | `key` | `LicenseState` |
+| `license_validate` | JS → Rust | Gumroad verify, no increment (online + grace) | — | `LicenseState` |
+| `license_deactivate` | JS → Rust | Clear local license (no server-side release) | — | `LicenseState` |
 
 ### 7.4 Data persistence
 
@@ -578,8 +607,7 @@ Files written:
 - `collections.json` — `Collection[]` (each with `items[]`)
 - `notes.json` — `Record<code, {text, editedAt}>`
 - `settings.json` — `{theme, fontFamily, fontSize, hasSeenOnboarding}`
-- `license.json` — `{unlocked, key, instanceId}`
-- `premium_override.json` — JSON bool (`true` / `false`)
+- `license.json` — `{unlocked, key}`
 
 The bundled SQLite DB is read-only at the app's Resource path; it never
 moves to the user's data dir.
@@ -604,10 +632,9 @@ Use this to jump straight to where a feature lives.
 | Themes | `settings.tsx`, `styles.css` `[data-theme]` blocks | — |
 | Font family | `main.tsx` imports, `settings.tsx` `FONT_STACKS` | — |
 | Text size | `settings.tsx` `ZOOM_FACTORS` (`webview.setZoom`) | — |
-| Lemon Squeezy license | `SettingsView.tsx` `PremiumSection`, `settings.tsx` | `license.rs` |
+| Gumroad license | `SettingsView.tsx` `PremiumSection`, `settings.tsx` | `license.rs` |
 | Freemium limits | `state.tsx` `FREE_FAVORITES_MAX`, `FREE_COLLECTIONS_MAX` | — |
 | Premium prompt modal | `components/PremiumPromptModal.tsx`, `App.tsx` | — |
-| Hidden rhythm | `SettingsView.tsx` `useSecretRhythm` + Version row | `license::toggle_override` |
 | App icon (OS dock / installer) | `src-tauri/icons/`, `app-icon-*.png` | — |
 | First-launch onboarding | `components/OnboardingView.tsx`, `src/assets/app-icon.png`, `settings.tsx` `hasSeenOnboarding` | — |
 
@@ -627,44 +654,55 @@ in `src-tauri/tauri.conf.json`. Don't change the identifier post-launch
 — it determines the app data directory path; changing it would orphan
 existing users' data.
 
-No secrets are stored in the repo. The Lemon Squeezy license API endpoints
-used are unauthenticated (public), as designed by LS for client apps.
+No secrets are stored in the repo. The Gumroad license API endpoint used
+is unauthenticated (public) — that's how Gumroad's client-facing license
+verification is designed to work.
 
 ---
 
-## 10. Lemon Squeezy setup
+## 10. Gumroad setup
 
-The license integration is fully built but cannot work end-to-end until
-someone creates the actual LS product. The flow once set up:
+The license integration is fully built (rewritten from Lemon Squeezy
+2026-08-05 — see the "Active blockers" note at the top of this file) but
+cannot work end-to-end until someone creates the actual Gumroad product.
+The flow once set up:
 
-1. **Sign up** at <https://lemonsqueezy.com>. LS acts as merchant of record
-   so they handle global tax, payment, refunds, fraud.
-2. **Create a Store** in the dashboard (name, country, currency).
-3. **Create a Product:**
+1. **Sign up** at <https://gumroad.com>. Gumroad acts as merchant of
+   record — handles global tax, payment, refunds, fraud.
+2. **Create a Product:**
    - Name: e.g. "ICD Snap Premium"
    - Pricing: one-time, e.g. $4.99
-   - **License Keys: enabled.** Set "Activation limit" to **2** (matches
-     the per-key device cap we agreed on).
-   - Optionally set a max validations per period for abuse control.
-4. **Test** with a test license key from the LS dashboard:
+   - **Generate license keys: enabled** (a checkbox on the product's
+     Content tab).
+3. **Product ID: already set** (2026-08-05) — `PRODUCT_ID` in
+   `src-tauri/src/license.rs` is `2vVCDdu-jffvO16Ks-FpGA==`. Gumroad
+   products created on/after 2023-01-09 need `product_id` (not
+   `product_permalink`) for the verify call. See
+   [Appendix B](#appendix-b--hardening-gumroad) if this ever needs
+   changing (new product, moved to a different Gumroad account, etc).
+4. **Test** with a real or Gumroad-generated test purchase:
    - In the app: Settings → Premium → paste key → Activate.
-   - LS dashboard: the license now shows one "instance" with name
-     "ICD Snap Desktop". Activate on a second machine; a second instance
-     appears. A third machine should be refused.
-5. **Tighten validation (recommended once the product is created):** add a
-   `product_id` check so keys from other LS products in the same account
-   can't accidentally unlock ICD Snap. See [Appendix B](#appendix-b--hardening-lemon-squeezy).
-6. **Point users at the LS checkout URL** from the in-app About page or
-   marketing site. After purchase LS emails the buyer their license key.
+   - Gumroad has no separate sandbox environment or per-key "instance"
+     list like Lemon Squeezy did — `license.rs` approximates the 2-device
+     cap client-side using the `uses` counter Gumroad returns from
+     `licenses/verify` (see `activate()` for the read-then-increment
+     logic). Activating on a 3rd machine should be refused; there is no
+     server-side "deactivate" call to free a slot again — `Deactivate on
+     this computer` only clears the local file (see the note in
+     `license.rs`).
+5. **Point users at the Gumroad product page** from the in-app About page
+   or marketing site. After purchase Gumroad emails the buyer their
+   license key.
 
-API endpoints used by the app (anonymous, no API key needed):
-- `POST https://api.lemonsqueezy.com/v1/licenses/activate`
-- `POST https://api.lemonsqueezy.com/v1/licenses/validate`
-- `POST https://api.lemonsqueezy.com/v1/licenses/deactivate`
+API endpoint used by the app (anonymous, no API key needed):
+- `POST https://api.gumroad.com/v2/licenses/verify`
 
-The activation flow stores `{key, instance_id}` locally. On each launch
-`validate` is called; offline / LS-down keeps the existing state (grace
-period). Only an explicit `valid: false` from LS locks premium.
+The activation flow stores `{key}` locally (no instance ID — Gumroad
+doesn't have that concept). On each launch `validate` calls `verify` with
+`increment_uses_count=false` (a read that doesn't burn an activation);
+offline / Gumroad-down keeps the existing state (grace period). Only an
+explicit invalid verdict (bad key, or a refunded/chargebacked/disputed/
+cancelled purchase) locks premium.
 
 ---
 
@@ -761,13 +799,8 @@ add multiple variants.
    window icon — see Gotcha #1).
 4. Rebuild.
 
-### Disable the hidden rhythm in a shipping build
-Remove the `onClick={secretTap}` attribute from the Version `<span>` in
-`src/components/SettingsView.tsx`. The `useSecretRhythm` hook is now
-unused but harmless.
-
-### Add a Lemon Squeezy `product_id` check
-See [Appendix B](#appendix-b--hardening-lemon-squeezy).
+### Set the Gumroad `product_id` / device cap
+See [Appendix B](#appendix-b--hardening-gumroad).
 
 ---
 
@@ -817,11 +850,18 @@ See [Appendix B](#appendix-b--hardening-lemon-squeezy).
    `macos-latest` runner has AppleScript access and `bundle_dmg.sh` works
    there — only local sandboxed shells hit the failure.
 
-7. **Premium override layering:** effective unlock is
-   `real_license OR override`. The hidden rhythm toggles the override
-   only, never the real license. A real LS license can be deactivated
-   only via the Premium section's "Deactivate on this computer" button
-   (which also calls the LS API to free the slot).
+7. **No premium override exists (removed 2026-08-05).** There used to be
+   a hidden version-tap rhythm (`useSecretRhythm` in `SettingsView.tsx`)
+   toggling a `premium_override.json` flag that was OR-ed into the real
+   license state, in every build — same idea as the iOS app's
+   `SecretTapDetector`, which was removed the same day for the same
+   reason: it's a silent, permanent, free bypass of the paywall for
+   anyone who finds the gesture (see the iOS project's `GOTCHAS.md` §20
+   for the full writeup). `isUnlocked` is now real license state only.
+   `license.rs`'s `deactivate()` clears the local key but — unlike Lemon
+   Squeezy's `/deactivate` — Gumroad has no API call to free the slot on
+   their side; the device cap is a client-side approximation only (see
+   §7 architecture notes and §10).
 
 8. **printpdf 0.8 builtin font fallback:** if no `ParsedFont` is added,
    the builtin Helvetica is usable via `Op::WriteTextBuiltinFont` — but
@@ -916,15 +956,12 @@ testing them in isolation is straightforward when you want to add Vitest.
       export PDF → Korean renders.
 - [ ] Theme: pick each theme → UI updates → restart → persisted.
 - [ ] Font: try each family + each size → restart → persisted.
-- [ ] Premium hidden rhythm: tap-tap pause tap-tap pause tap-tap on
-      "Version 1.0.0" → "Premium override toggled" flash → premium
-      themes unlock.
-- [ ] Free-tier limits: with override OFF, add 16th favorite → upsell
-      modal. Try to create 11th collection → upsell modal. Existing
-      data is not deleted.
-- [ ] License: with the Lemon Squeezy product live, paste a real key →
+- [ ] Free-tier limits: with no license activated, add 16th favorite →
+      upsell modal. Try to create 11th collection → upsell modal.
+      Existing data is not deleted.
+- [ ] License: with the Gumroad product live, paste a real key →
       Activate succeeds → second machine activates → third machine
-      refused.
+      refused (per `MAX_ACTIVATIONS` in `license.rs`).
 
 ---
 
@@ -1071,55 +1108,40 @@ draft GitHub Release for you to review and publish.
 
 ---
 
-## Appendix B — Hardening Lemon Squeezy
+## Appendix B — Hardening Gumroad
 
-Once you have a real LS product, add a `product_id` check so license keys
-from any other LS product in your account can't accidentally unlock ICD
-Snap.
-
-In `src-tauri/src/license.rs`:
+`PRODUCT_ID` in `src-tauri/src/license.rs` is already set (2026-08-05):
 
 ```rust
-/// Replace 0 with the real product ID from your LS dashboard URL.
-const EXPECTED_PRODUCT_ID: u64 = 0;
-
-#[derive(Deserialize)]
-struct ActivateResp {
-    activated: bool,
-    error: Option<String>,
-    instance: Option<Instance>,
-    meta: Option<Meta>,                  // <- add this
-}
-
-#[derive(Deserialize)]
-struct ValidateResp {
-    valid: bool,
-    meta: Option<Meta>,                  // <- add this
-}
-
-#[derive(Deserialize)]
-struct Meta {
-    product_id: u64,
-}
-
-fn product_id_ok(meta: &Option<Meta>) -> bool {
-    EXPECTED_PRODUCT_ID == 0
-        || meta.as_ref().map(|m| m.product_id) == Some(EXPECTED_PRODUCT_ID)
-}
+/// From the Gumroad product dashboard for "ICD Snap" — see HANDOFF.md §10.
+const PRODUCT_ID: &str = "2vVCDdu-jffvO16Ks-FpGA==";
 ```
 
-Then in `activate`:
-```rust
-if !resp.activated || !product_id_ok(&resp.meta) {
-    return Err(resp.error.unwrap_or_else(|| "This license key is not valid for ICD Snap.".into()));
-}
-```
+If this ever needs to change (new Gumroad product, moved accounts, etc),
+find the real ID from the product's dashboard URL or the Gumroad API. An
+empty `PRODUCT_ID` would make every `licenses/verify` call fail (or,
+worse, could theoretically match against the wrong product if Gumroad
+ever tolerates an empty value — don't rely on that).
 
-And in the validate path, treat a product_id mismatch as `valid: false`
-(lock the app and clear the stored license).
+**Tune the device cap.** `MAX_ACTIVATIONS` (also in `license.rs`,
+currently `2`) controls how many machines one key can activate. This is
+enforced entirely client-side — `activate()` reads the current `uses`
+count with a non-incrementing `verify` call and refuses to proceed if
+it's already at the cap, then makes a second `verify` call with
+`increment_uses_count=true` to actually register this machine. There is
+no Gumroad API to decrement `uses` or free a slot, so a user who
+reinstalls without deactivating first will eventually hit the cap even
+though they only ever used one real machine — worth a note in the UI
+error message, or a generous cap, or accept it as a known rough edge for
+a v1.
 
-Leaving `EXPECTED_PRODUCT_ID = 0` is the current state — the check is a
-no-op and any LS key activates. Set it to the real number when ready.
+**Purchase validity.** `Purchase::is_valid()` checks `refunded`,
+`chargebacked`, `disputed`, `subscription_cancelled_at`, and
+`subscription_failed_at` from the `purchase` object Gumroad returns.
+ICD Snap's product is a one-time non-subscription purchase, so only
+`refunded`/`chargebacked`/`disputed` will realistically ever fire — the
+subscription fields are there in case a future Snap-series product on
+Gumroad is a subscription instead.
 
 ---
 

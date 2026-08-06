@@ -1,5 +1,5 @@
 import { ask } from "@tauri-apps/plugin-dialog";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FONT_FAMILIES,
   FONT_LABELS,
@@ -20,34 +20,6 @@ const FONT_PREVIEW: Record<FontFamily, string> = {
   atkinson: '"Atkinson Hyperlegible", sans-serif',
   quattro: '"iA Writer Quattro", sans-serif',
 };
-
-/** Detects the hidden unlock rhythm: tap-tap · pause · tap-tap · pause ·
- *  tap-tap (6 clicks). Mirrors the iOS app's SecretTapDetector. */
-function useSecretRhythm(onTrigger: () => void) {
-  const taps = useRef<number[]>([]);
-  return useCallback(() => {
-    const now = Date.now();
-    const t = taps.current;
-    if (t.length > 0 && now - t[t.length - 1] > 6000) t.length = 0;
-    t.push(now);
-    if (t.length > 6) t.splice(0, t.length - 6);
-    if (t.length === 6) {
-      const g = [
-        t[1] - t[0],
-        t[2] - t[1],
-        t[3] - t[2],
-        t[4] - t[3],
-        t[5] - t[4],
-      ];
-      const pair = (x: number) => x < 700;
-      const gap = (x: number) => x >= 700 && x <= 4500;
-      if (pair(g[0]) && gap(g[1]) && pair(g[2]) && gap(g[3]) && pair(g[4])) {
-        taps.current = [];
-        onTrigger();
-      }
-    }
-  }, [onTrigger]);
-}
 
 const SWATCH: Record<Theme, [string, string]> = {
   system: ["#ffffff", "#1c1d21"],
@@ -82,16 +54,7 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
     licenseKey,
     activateLicense,
     deactivateLicense,
-    togglePremiumOverride,
   } = useSettings();
-
-  const [flash, setFlash] = useState<string | null>(null);
-  const secretTap = useSecretRhythm(() => {
-    togglePremiumOverride().then(() => {
-      setFlash("Premium override toggled");
-      setTimeout(() => setFlash((f) => (f ? null : f)), 2500);
-    });
-  });
 
   const [open, setOpen] = useState<InfoPanel>(initialPanel);
   useEffect(() => {
@@ -190,7 +153,6 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
           licenseKey={licenseKey}
           activateLicense={activateLicense}
           deactivateLicense={deactivateLicense}
-          togglePremiumOverride={togglePremiumOverride}
         />
 
         <section className="settings-section">
@@ -211,15 +173,8 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
           <h2 className="settings-heading">About</h2>
           <div className="info-row">
             <span className="info-row__label">ICD Snap</span>
-            <span
-              className="info-row__value"
-              onClick={secretTap}
-              style={{ cursor: "default" }}
-            >
-              Version 1.0.0
-            </span>
+            <span className="info-row__value">Version 1.0.0</span>
           </div>
-          {flash && <p className="settings-hint">{flash}</p>}
           <NavRow label="About This App" onClick={() => setPanel("about")} />
         </section>
       </div>
@@ -265,19 +220,16 @@ function PremiumSection({
   licenseKey,
   activateLicense,
   deactivateLicense,
-  togglePremiumOverride,
 }: {
   unlocked: boolean;
   licenseKey: string | null;
   activateLicense: (key: string) => Promise<void>;
   deactivateLicense: () => Promise<void>;
-  togglePremiumOverride: () => Promise<void>;
 }) {
   const { favorites, collections } = useAppData();
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isDev = import.meta.env.DEV;
 
   async function activate() {
     setBusy(true);
@@ -359,14 +311,6 @@ function PremiumSection({
           </div>
           {error && <p className="license-error">{error}</p>}
         </div>
-      )}
-      {isDev && (
-        <button
-          className="btn dev-btn"
-          onClick={() => togglePremiumOverride()}
-        >
-          Dev: toggle premium override
-        </button>
       )}
     </section>
   );

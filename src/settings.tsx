@@ -84,7 +84,6 @@ interface StoredSettings {
 interface LicenseState {
   unlocked: boolean;
   key: string | null;
-  instanceId: string | null;
 }
 
 interface SettingsCtx {
@@ -100,8 +99,6 @@ interface SettingsCtx {
   licenseKey: string | null;
   activateLicense: (key: string) => Promise<void>;
   deactivateLicense: () => Promise<void>;
-  /** Hidden demo/testing toggle (version-tap rhythm + dev button). */
-  togglePremiumOverride: () => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsCtx | null>(null);
@@ -114,7 +111,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [license, setLicense] = useState<LicenseState>({
     unlocked: false,
     key: null,
-    instanceId: null,
   });
   const loaded = useRef(false);
 
@@ -183,10 +179,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setLicense(await invoke<LicenseState>("license_deactivate"));
   }, []);
 
-  const togglePremiumOverride = useCallback(async () => {
-    setLicense(await invoke<LicenseState>("license_toggle_override"));
-  }, []);
-
   const dismissOnboarding = useCallback(() => {
     setHasSeenOnboarding(true);
   }, []);
@@ -206,7 +198,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         licenseKey: license.key,
         activateLicense,
         deactivateLicense,
-        togglePremiumOverride,
       }}
     >
       {children}

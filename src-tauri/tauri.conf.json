@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ICD Snap",
-  "version": "1.0.0",
+  "mainBinaryName": "ICD Snap",
+  "version": "1.0.1",
   "identifier": "com.ryan.icdsnap",
   "build": {
     "beforeDevCommand": "npm run dev",
