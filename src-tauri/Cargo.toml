@@ -1,6 +1,6 @@
 [package]
 name = "icdsnap"
-version = "1.0.1"
+version = "1.0.2"
 description = "ICD Snap — fast offline ICD-10-CM code lookup"
 authors = ["Ryan"]
 edition = "2021"

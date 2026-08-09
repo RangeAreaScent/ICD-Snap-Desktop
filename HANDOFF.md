@@ -32,7 +32,7 @@
 - **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/` / `src-tauri/src/menu.rs`, any Gumroad milestone, any signing config change, any new dataset bundled, any further IMPROVEMENT_PLAN Polish round
 <!-- snap-series:manager-block:end -->
 
-> Last updated 2026-08-06. App version 1.0.1.
+> Last updated 2026-08-06. App version 1.0.2.
 > Repository: <https://github.com/RangeAreaScent/ICD-Snap-Desktop>
 >
 > **Series context.** ICD Snap is one of ten apps in the Snap series
