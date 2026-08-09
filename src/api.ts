@@ -1,5 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type { CodeDetail, SearchResult } from "./types";
+
+/** The Gumroad product page — where a license key actually comes from. */
+export const GUMROAD_PRODUCT_URL = "https://doieuser.gumroad.com/l/ICD-SNAP";
+
+export function openGumroadPurchasePage(): Promise<void> {
+  return openUrl(GUMROAD_PRODUCT_URL);
+}
 
 export function searchCodes(query: string, limit = 50): Promise<SearchResult[]> {
   return invoke<SearchResult[]>("search_codes", { query, limit });

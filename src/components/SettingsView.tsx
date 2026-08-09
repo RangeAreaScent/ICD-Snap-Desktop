@@ -1,5 +1,6 @@
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
+import { openGumroadPurchasePage } from "../api";
 import {
   FONT_FAMILIES,
   FONT_LABELS,
@@ -289,8 +290,15 @@ function PremiumSection({
             {collections.length} / {FREE_COLLECTIONS_MAX} collections. Notes
             and export are always unlimited.
           </p>
+          <button
+            className="btn btn--primary"
+            onClick={() => openGumroadPurchasePage()}
+          >
+            Buy Premium on Gumroad
+          </button>
           <p className="premium-box__text">
-            Enter your license key (one key works on up to 2 computers):
+            Already bought it? Enter your license key (one key works on up
+            to 2 computers):
           </p>
           <div className="license-row">
             <input
@@ -788,7 +796,17 @@ function AboutModal({ onClose }: { onClose: () => void }) {
         <p>
           A one-time premium license unlocks all four premium themes and
           removes both free-plan capacity limits. It's a genuine help if
-          the app earns its place on your dock.
+          the app earns its place on your dock.{" "}
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              openGumroadPurchasePage();
+            }}
+          >
+            Buy a license on Gumroad
+          </a>
+          .
         </p>
       </ModalSection>
 
@@ -817,7 +835,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
         </p>
         <p>
           The <em>only</em> network call the app ever makes is the
-          optional license-key activation check with Lemon Squeezy (our
+          optional license-key activation check with Gumroad (our
           payment processor) when you choose to enter a premium key.
           The free app makes zero network calls.
         </p>
