@@ -41,6 +41,16 @@ export const THEME_LABELS: Record<Theme, string> = {
   blueberry: "Blueberry",
 };
 
+export const THEME_DESCRIPTIONS: Record<Theme, string> = {
+  system: "Follows your Mac's appearance setting — light or dark, automatically.",
+  light: "Clean white cards on a light gray background. Always light, regardless of the system setting.",
+  dark: "Dark cards on a near-black background. Always dark, regardless of the system setting.",
+  "sky-blue": "Pantone-inspired pastel blue. Crisp white cards float on a soft sky-blue background.",
+  "peach-pink": "Warm pastel peach. White cards on a peach background for a soft, gentle feel.",
+  "deep-charcoal": "Sophisticated dark theme. Warm dark-gray cards on a near-black background.",
+  blueberry: "Deep navy-blueberry theme. Saturated blue-toned cards on a deeper navy background.",
+};
+
 export const FONT_FAMILIES: FontFamily[] = [
   "system",
   "inter",
@@ -52,6 +62,13 @@ export const FONT_LABELS: Record<FontFamily, string> = {
   inter: "Inter",
   atkinson: "Atkinson Hyperlegible",
   quattro: "iA Writer Quattro",
+};
+
+export const FONT_DESCRIPTIONS: Record<FontFamily, string> = {
+  system: "Your Mac's default UI font (SF Pro or similar). Familiar and fast to read.",
+  inter: "A clean, modern sans-serif designed for screens. Great all-around readability.",
+  atkinson: "Designed by the Braille Institute specifically for low-vision readability — the clearest choice if you're reading codes for hours.",
+  quattro: "Distinguishes similar characters (0/O, 1/l/I) at a glance, which helps when scanning alphanumeric codes like E11.9.",
 };
 const FONT_STACKS: Record<FontFamily, string> = {
   system: '-apple-system, "Segoe UI", Roboto, sans-serif',

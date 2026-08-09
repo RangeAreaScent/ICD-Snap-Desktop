@@ -2,12 +2,14 @@ import { ask } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { openGumroadPurchasePage } from "../api";
 import {
+  FONT_DESCRIPTIONS,
   FONT_FAMILIES,
   FONT_LABELS,
   FONT_SIZE_LABELS,
   FONT_SIZES,
   FREE_THEMES,
   PREMIUM_THEMES,
+  THEME_DESCRIPTIONS,
   THEME_LABELS,
   useSettings,
   type FontFamily,
@@ -57,6 +59,12 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
     deactivateLicense,
   } = useSettings();
 
+  const [inspected, setInspected] = useState<{ label: string; description: string } | null>(null);
+  const inspectTheme = (t: Theme) =>
+    setInspected({ label: THEME_LABELS[t], description: THEME_DESCRIPTIONS[t] });
+  const inspectFont = (f: FontFamily) =>
+    setInspected({ label: FONT_LABELS[f], description: FONT_DESCRIPTIONS[f] });
+
   const [open, setOpen] = useState<InfoPanel>(initialPanel);
   useEffect(() => {
     setOpen(initialPanel);
@@ -85,7 +93,10 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
                 theme={t}
                 selected={theme === t}
                 locked={false}
-                onClick={() => setTheme(t)}
+                onClick={() => {
+                  setTheme(t);
+                  inspectTheme(t);
+                }}
               />
             ))}
           </div>
@@ -99,7 +110,10 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
                 theme={t}
                 selected={theme === t}
                 locked={!unlocked}
-                onClick={() => unlocked && setTheme(t)}
+                onClick={() => {
+                  if (unlocked) setTheme(t);
+                  inspectTheme(t);
+                }}
               />
             ))}
           </div>
@@ -117,7 +131,10 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
                 className={`theme-card${
                   fontFamily === f ? " theme-card--selected" : ""
                 }`}
-                onClick={() => setFontFamily(f)}
+                onClick={() => {
+                  setFontFamily(f);
+                  inspectFont(f);
+                }}
               >
                 <span
                   className="font-preview"
@@ -132,6 +149,11 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
               </button>
             ))}
           </div>
+          {inspected && (
+            <p className="settings-hint">
+              <strong>{inspected.label}</strong> — {inspected.description}
+            </p>
+          )}
 
           <p className="settings-sub">Text size</p>
           <div className="segmented">
