@@ -9,7 +9,7 @@
 - **Repo:** https://github.com/RangeAreaScent/ICD-Snap-Desktop
 - **Latest release:** v1.0.0 — **published** 2026-08-06 (was a draft since 2026-05-29; still pre-dates Phase A~D + Polish, but the user chose to publish it anyway for real cross-Mac testing convenience — see §6.5). A signed + notarized universal Mac DMG is live on this release and linked from the marketing site (`doie.cc/snap/icd-snap`, macOS "Download for Mac" badge → direct GitHub asset). v1.0.1 (Gumroad + signing/override fixes below) is about to be tagged on top of this — same release lineage, not a separate stale draft.
 - **Latest CI:** success on v1.0.0 (Windows-only, commit `4b1c1d0`, **pre-dates** the 2026-08-06 Gumroad/override changes — that Windows .msi/.exe is stale, still Lemon Squeezy + hidden override, unsigned). v1.0.1 CI run is what will pick up today's changes. Mac DMG for v1.0.0 built locally via `tauri build` + `hdiutil` fallback (§13 gotcha #6), signed + notarized successfully with the DOIE LLC Developer ID cert (§6.5 verify recipe passed: codesign / spctl / stapler all green).
-- **Bundle id:** com.ryan.icdsnap
+- **Bundle id:** cc.doie.icdsnap
 - **Dataset:** `icd10cm_2026.sqlite`, ~98K rows (74,714 billable), 40 MB, license: public domain (CDC / NCHS)
 - **Dataset update cadence:** Annual (Oct 1, U.S. FY rollover), next refresh window 2026-10 for FY 2027
 - **Deviations from playbook (4-tab ICD vs Tariff UK 6-tab reference):**
@@ -596,11 +596,11 @@ Modules in `src-tauri/src/`:
 ### 7.4 Data persistence
 
 User data lives in the OS-standard app data directory under the bundle
-identifier `com.ryan.icdsnap`:
+identifier `cc.doie.icdsnap`:
 
-- **macOS:** `~/Library/Application Support/com.ryan.icdsnap/`
-- **Windows:** `%APPDATA%\com.ryan.icdsnap\` (i.e. `C:\Users\<you>\AppData\Roaming\com.ryan.icdsnap\`)
-- **Linux:** `~/.config/com.ryan.icdsnap/` (if anyone ever builds for Linux)
+- **macOS:** `~/Library/Application Support/cc.doie.icdsnap/`
+- **Windows:** `%APPDATA%\cc.doie.icdsnap\` (i.e. `C:\Users\<you>\AppData\Roaming\cc.doie.icdsnap\`)
+- **Linux:** `~/.config/cc.doie.icdsnap/` (if anyone ever builds for Linux)
 
 Files written:
 - `favorites.json` — `Favorite[]`
@@ -649,10 +649,20 @@ for the full release flow):
 - `package.json` — `"version": "1.0.0"`
 - `HANDOFF.md` header — `App version 1.0.0`
 
-Bundle identifier (`com.ryan.icdsnap`) and product name (`ICD Snap`) live
+Bundle identifier (`cc.doie.icdsnap`) and product name (`ICD Snap`) live
 in `src-tauri/tauri.conf.json`. Don't change the identifier post-launch
 — it determines the app data directory path; changing it would orphan
 existing users' data.
+
+**Changed 2026-08-09**: was `com.ryan.icdsnap`, renamed to `cc.doie.icdsnap`
+as part of a Snap-series-wide rebrand to the `cc.doie.*` prefix (matching
+the DOIE LLC entity, not the earlier personal `com.ryan.*` convention). The
+"don't change post-launch" rule above was knowingly overridden here — the
+user judged v1.0.0–v1.0.2 hadn't seen real adoption yet, so the
+orphaned-local-data risk for anyone who *did* install one of those was
+accepted. Any Mac/Windows build shipped 2026-08-09 or later uses the new
+identifier; local data from the older `com.ryan.icdsnap` installs will not
+carry over automatically.
 
 No secrets are stored in the repo. The Gumroad license API endpoint used
 is unauthenticated (public) — that's how Gumroad's client-facing license

@@ -3,7 +3,7 @@
   "productName": "ICD Snap",
   "mainBinaryName": "ICD Snap",
   "version": "1.0.2",
-  "identifier": "com.ryan.icdsnap",
+  "identifier": "cc.doie.icdsnap",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
