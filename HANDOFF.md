@@ -1168,4 +1168,5 @@ Gumroad is a subscription instead.
   is no longer dropped. Rust tests in `src-tauri/src/icd.rs`.
 - Saved favorites/collection items: at launch `src/reconcile.ts` refreshes their stored description/billable flag from the bundled data and
   flags codes the data no longer contains with an orange "Not in FY 2027" badge; exports mark them non-billable with `[Not in FY 2027]`.
+- About/Settings showed a hard-coded "Version 1.0.0" in v1.0.0-v1.0.2; it now reads the real bundle version (`src/useAppVersion.ts`).
 - Free-tier caps removed (user decision 2026-11-03, same stance as Hangar Snap): favorites and collections are unlimited and free. Premium (Gumroad license) now unlocks the four premium themes only. `PremiumPromptModal` and the cap state were deleted.

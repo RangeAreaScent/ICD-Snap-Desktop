@@ -1,4 +1,5 @@
 import { useDataset } from "../dataset";
+import { useAppVersion } from "../useAppVersion";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { openGumroadPurchasePage } from "../api";
@@ -47,6 +48,7 @@ interface Props {
 
 export function SettingsView({ initialPanel = null, onPanelChange }: Props = {}) {
   const ds = useDataset();
+  const appVersion = useAppVersion();
   const {
     theme,
     setTheme,
@@ -197,7 +199,7 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
           <h2 className="settings-heading">About</h2>
           <div className="info-row">
             <span className="info-row__label">ICD Snap</span>
-            <span className="info-row__value">Version 1.0.0</span>
+            <span className="info-row__value">Version {appVersion}</span>
           </div>
           <NavRow label="About This App" onClick={() => setPanel("about")} />
         </section>
@@ -732,11 +734,12 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
 
 function AboutModal({ onClose }: { onClose: () => void }) {
   const ds = useDataset();
+  const appVersion = useAppVersion();
   return (
     <InfoModal title="About ICD Snap" onClose={onClose}>
       <div className="info-modal__app-header">
         <div className="info-modal__app-name">ICD Snap</div>
-        <div className="info-modal__app-version">Version 1.0.0</div>
+        <div className="info-modal__app-version">Version {appVersion}</div>
         <div className="info-modal__app-tagline">
           Find an ICD-10-CM code in two seconds. Offline, forever.
         </div>
