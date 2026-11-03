@@ -1,3 +1,4 @@
+import { ChevronLeft, FolderPlus, Plus, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCodeDetail } from "../api";
 import { useAppData } from "../state";
@@ -98,7 +99,7 @@ export function CodeDetailView({ code, onClose }: Props) {
     <div className="detail-pane">
       {onClose && (
         <button className="detail-back" onClick={onClose} title="Back to list">
-          ‹ Back
+          <ChevronLeft className="ico-inline" /> Back
         </button>
       )}
       <div className="detail-scroll">
@@ -109,14 +110,15 @@ export function CodeDetailView({ code, onClose }: Props) {
               title={fav ? "Remove from favorites" : "Add to favorites"}
               onClick={() => toggleFavorite(asItem)}
             >
-              {fav ? "★" : "☆"}
+              <Star fill={fav ? "currentColor" : "none"} />
             </button>
             <button
               className="icon-btn"
               title="Add to collection"
+              aria-label="Add to collection"
               onClick={() => setAddingToCollection(true)}
             >
-              ＋
+              <FolderPlus />
             </button>
           </div>
           <div className="detail-hero__code">{detail.code}</div>
@@ -284,7 +286,7 @@ function NoteSection({ code }: { code: string }) {
         </>
       ) : (
         <button className="note-add" onClick={startEdit}>
-          ＋ Add a note
+          <Plus className="ico-inline" /> Add a note
         </button>
       )}
     </div>

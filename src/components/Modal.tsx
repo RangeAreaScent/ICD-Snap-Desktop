@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
 interface Props {
@@ -21,8 +22,8 @@ export function Modal({ title, onClose, children, footer }: Props) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal__header">
           <h3 className="modal__title">{title}</h3>
-          <button className="modal__close" onClick={onClose} title="Close">
-            ✕
+          <button className="modal__close" onClick={onClose} title="Close" aria-label="Close">
+            <X />
           </button>
         </div>
         <div className="modal__body">{children}</div>

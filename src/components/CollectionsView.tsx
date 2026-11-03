@@ -1,13 +1,14 @@
-import { ask, save } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useRef, useState } from "react";
-import { exportCollectionCSV, exportCollectionPDF, markEntry } from "../export";
+import { ask } from "@tauri-apps/plugin-dialog";
+import { ChevronLeft, Ellipsis, FileDown, FileText, Plus, Sheet, Square } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { exportCollectionCSV, exportCollectionPDF, exportItemsPDF } from "../export";
 import { useDataset } from "../dataset";
 import { useListKeyNav } from "../hooks/useListKeyNav";
 import { useAppData } from "../state";
 import type { Collection } from "../types";
 import { AddCodeModal } from "./AddCodeModal";
 import { CollectionFormModal } from "./CollectionFormModal";
+import { ActionMenu, MenuItem } from "./Menu";
 import { showToast } from "./Toaster";
 
 interface Props {
@@ -56,8 +57,9 @@ function CollectionList({ onOpen }: { onOpen: (id: string) => void }) {
           className="pane-header__action"
           title="New collection"
           onClick={startNew}
+          aria-label="New collection"
         >
-          ＋
+          <Plus />
         </button>
       </div>
       <div className="list-scroll">
@@ -114,19 +116,25 @@ function CollectionDetail({
     useAppData();
   const ds = useDataset();
   const mark = { isMissing, label: ds.missingLabel };
-  const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState<"rename" | "addcode" | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [filterText, setFilterText] = useState("");
+  const visibleItems = useMemo(() => {
+    const q = filterText.trim().toLowerCase();
+    if (!q) return collection.items;
+    return collection.items.filter(
+      (i) => i.code.toLowerCase().includes(q) || i.description.toLowerCase().includes(q),
+    );
+  }, [collection.items, filterText]);
 
   /** Multi-select mode mirrors Favorites: pick rows, then export or
-   * remove. Single-row ✕ button is gone — single-row removal happens
-   * through select-one + 🗑 to keep one removal path. */
+   * remove. Single-row removal happens through select-one + Remove to
+   * keep one removal path. */
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
   useListKeyNav(
-    selecting ? [] : collection.items,
+    selecting ? [] : visibleItems,
     selectedCode,
     onSelect,
   );
@@ -169,46 +177,19 @@ function CollectionDetail({
   async function bulkExport() {
     if (picked.size === 0) return;
     const items = collection.items.filter((i) => picked.has(i.code));
-    const path = await save({
-      defaultPath: `${collection.name}-selection.pdf`,
-      filters: [{ name: "PDF", extensions: ["pdf"] }],
-    });
-    if (!path) return;
     try {
-      await invoke("export_pdf", {
-        path,
+      const saved = await exportItemsPDF(collection.name, items, notes, mark, {
         title: `${collection.name} (selection)`,
-        entries: items.map((it) =>
-          markEntry(
-            {
-              code: it.code,
-              description: it.description,
-              note: notes[it.code]?.text ?? "",
-              billable: it.isBillable ? "Yes" : "No",
-              chapter: it.chapterDescription,
-              block: "",
-              category: "",
-            },
-            mark,
-          ),
-        ),
+        fileStem: `${collection.name}-selection`,
       });
-      showToast("PDF saved");
-      cancelSelect();
+      if (saved) {
+        showToast("PDF saved");
+        cancelSelect();
+      }
     } catch (e) {
       showToast(`Export failed: ${e}`);
     }
   }
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
 
   function flash(msg: string) {
     setStatusMsg(msg);
@@ -216,7 +197,6 @@ function CollectionDetail({
   }
 
   async function copyAll() {
-    setMenuOpen(false);
     if (collection.items.length === 0) return;
     await navigator.clipboard.writeText(
       collection.items.map((i) => i.code).join(", "),
@@ -225,7 +205,6 @@ function CollectionDetail({
   }
 
   async function exportCSV() {
-    setMenuOpen(false);
     try {
       if (await exportCollectionCSV(collection, notes, mark)) flash("CSV saved");
     } catch (e) {
@@ -234,7 +213,6 @@ function CollectionDetail({
   }
 
   async function exportPDF() {
-    setMenuOpen(false);
     if (collection.items.length === 0) return;
     try {
       if (await exportCollectionPDF(collection, notes, mark)) flash("PDF saved");
@@ -244,7 +222,6 @@ function CollectionDetail({
   }
 
   async function confirmDelete() {
-    setMenuOpen(false);
     const ok = await ask(
       `Delete "${collection.name}"? This cannot be undone.`,
       { title: "Delete collection", kind: "warning" },
@@ -258,8 +235,8 @@ function CollectionDetail({
   return (
     <div className="list-pane">
       <div className="pane-header pane-header--detail">
-        <button className="back-btn" onClick={onBack} title="Back">
-          ‹
+        <button className="back-btn" onClick={onBack} title="Back" aria-label="Back">
+          <ChevronLeft />
         </button>
         <div className="collection-head">
           <span className="collection-head__emoji">{collection.emoji}</span>
@@ -271,88 +248,123 @@ function CollectionDetail({
             </div>
           </div>
         </div>
-        {collection.items.length > 0 && !selecting && (
-          <button
-            className="pane-header__action"
-            onClick={() => setSelecting(true)}
-            title="Select codes"
-            aria-label="Select codes"
-          >
-            ☐
-          </button>
+        {!selecting && (
+          <div className="pane-header__tools">
+            <button
+              className="pane-header__action"
+              onClick={() => setModal("addcode")}
+              title="Add a code"
+              aria-label="Add a code"
+            >
+              <Plus />
+            </button>
+            {collection.items.length > 0 && (
+              <button
+                className="pane-header__action"
+                onClick={() => setSelecting(true)}
+                title="Select codes"
+                aria-label="Select codes"
+              >
+                <Square />
+              </button>
+            )}
+            {collection.items.length > 0 && (
+              <ActionMenu icon={<FileDown />} title="Export collection">
+                {(close) => (
+                  <>
+                    <MenuItem
+                      icon={<FileText size={15} />}
+                      onClick={() => {
+                        close();
+                        void exportPDF();
+                      }}
+                    >
+                      Export PDF
+                    </MenuItem>
+                    <MenuItem
+                      icon={<Sheet size={15} />}
+                      onClick={() => {
+                        close();
+                        void exportCSV();
+                      }}
+                    >
+                      Export CSV
+                    </MenuItem>
+                  </>
+                )}
+              </ActionMenu>
+            )}
+            <ActionMenu icon={<Ellipsis />} title="Actions">
+              {(close) => (
+                <>
+                  <MenuItem
+                    onClick={() => {
+                      close();
+                      void copyAll();
+                    }}
+                  >
+                    Copy all codes
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      close();
+                      setModal("rename");
+                    }}
+                  >
+                    Rename
+                  </MenuItem>
+                  <MenuItem
+                    danger
+                    onClick={() => {
+                      close();
+                      void confirmDelete();
+                    }}
+                  >
+                    Delete collection
+                  </MenuItem>
+                </>
+              )}
+            </ActionMenu>
+          </div>
         )}
-        <div className="menu-wrap" ref={menuRef}>
-          <button
-            className="pane-header__action"
-            title="Actions"
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            ⋯
-          </button>
-          {menuOpen && (
-            <div className="menu">
-              <button
-                className="menu__item"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setModal("addcode");
-                }}
-              >
-                Add code
-              </button>
-              <button className="menu__item" onClick={copyAll}>
-                Copy all codes
-              </button>
-              <button className="menu__item" onClick={exportCSV}>
-                Export as CSV…
-              </button>
-              <button className="menu__item" onClick={exportPDF}>
-                Export as PDF…
-              </button>
-              <button
-                className="menu__item"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setModal("rename");
-                }}
-              >
-                Rename
-              </button>
-              <button
-                className="menu__item menu__item--danger"
-                onClick={confirmDelete}
-              >
-                Delete collection
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
+      {collection.items.length > 0 && (
+        <input
+          className="filter-input"
+          placeholder="Filter codes"
+          aria-label="Filter codes"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+        />
+      )}
+
       {selecting && (
-        <div className="multi-bar">
-          <span className="multi-bar__count">{picked.size} selected</span>
-          <div className="multi-bar__actions">
-            <button
-              className="icon-btn"
-              onClick={bulkExport}
-              disabled={picked.size === 0}
-              title="Export selection as PDF"
-            >
-              📄
-            </button>
-            <button
-              className="icon-btn icon-btn--danger"
-              onClick={bulkRemove}
-              disabled={picked.size === 0}
-              title="Remove from collection"
-            >
-              🗑
-            </button>
-            <button className="icon-btn" onClick={cancelSelect} title="Cancel">
-              ✕
-            </button>
-          </div>
+        <div className="select-bar">
+          <span className="select-bar__count">{picked.size} selected</span>
+          <button
+            className="btn btn--small"
+            onClick={() => setPicked(new Set(visibleItems.map((i) => i.code)))}
+          >
+            Select all
+          </button>
+          <button
+            className="btn btn--small"
+            onClick={bulkExport}
+            disabled={picked.size === 0}
+          >
+            Export PDF
+          </button>
+          <button
+            className="btn btn--small"
+            onClick={bulkRemove}
+            disabled={picked.size === 0}
+          >
+            Remove
+          </button>
+          <button className="btn btn--small select-bar__done" onClick={cancelSelect}>
+            Done
+          </button>
         </div>
       )}
 
@@ -360,10 +372,16 @@ function CollectionDetail({
         {collection.items.length === 0 && (
           <div className="state-msg">
             <p className="state-msg__title">Empty collection</p>
-            <p>Use the ⋯ menu to add codes.</p>
+            <p>Use the + button to add codes.</p>
           </div>
         )}
-        {collection.items.map((item) => {
+        {collection.items.length > 0 && visibleItems.length === 0 && (
+          <div className="state-msg">
+            <p className="state-msg__title">No matches</p>
+            <p>No code matches “{filterText}”.</p>
+          </div>
+        )}
+        {visibleItems.map((item) => {
           if (selecting) {
             const isPicked = picked.has(item.code);
             return (

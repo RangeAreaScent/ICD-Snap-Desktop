@@ -1,3 +1,4 @@
+import { Check, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { searchCodes } from "../api";
 import { useAppData } from "../state";
@@ -65,7 +66,7 @@ export function AddCodeModal({ collectionId, onClose }: Props) {
             >
               <span className="pick-row__code">{r.code}</span>
               <span className="pick-row__name">{r.description}</span>
-              <span className="pick-row__check">{inside ? "✓" : "＋"}</span>
+              <span className="pick-row__check">{inside ? <Check /> : <Plus />}</span>
             </button>
           );
         })}

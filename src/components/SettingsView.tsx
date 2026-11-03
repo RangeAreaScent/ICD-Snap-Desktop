@@ -1,3 +1,4 @@
+import { Check, Lock, X } from "lucide-react";
 import { useDataset } from "../dataset";
 import { useAppVersion } from "../useAppVersion";
 import { ask } from "@tauri-apps/plugin-dialog";
@@ -104,7 +105,7 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
             ))}
           </div>
           <p className="settings-sub">
-            Premium themes {unlocked ? "" : "🔒"}
+            Premium themes {unlocked ? null : <Lock className="ico-inline" />}
           </p>
           <div className="theme-grid">
             {PREMIUM_THEMES.map((t) => (
@@ -147,7 +148,7 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
                 </span>
                 <span className="theme-card__label">{FONT_LABELS[f]}</span>
                 {fontFamily === f && (
-                  <span className="theme-card__check">✓</span>
+                  <span className="theme-card__check"><Check /></span>
                 )}
               </button>
             ))}
@@ -233,10 +234,10 @@ function ThemeCard({
     >
       <span className="theme-swatch" style={{ background: bg }}>
         <span className="theme-swatch__dot" style={{ background: accent }} />
-        {locked && <span className="theme-swatch__lock">🔒</span>}
+        {locked && <span className="theme-swatch__lock"><Lock /></span>}
       </span>
       <span className="theme-card__label">{THEME_LABELS[theme]}</span>
-      {selected && <span className="theme-card__check">✓</span>}
+      {selected && <span className="theme-card__check"><Check /></span>}
     </button>
   );
 }
@@ -291,7 +292,7 @@ function PremiumSection({
       <h2 className="settings-heading">Premium</h2>
       {unlocked ? (
         <div className="premium-box premium-box--on">
-          <p className="premium-box__title">✓ Premium unlocked</p>
+          <p className="premium-box__title"><Check className="ico-inline" /> Premium unlocked</p>
           <p className="premium-box__text">
             Thank you for supporting ICD Snap.
           </p>
@@ -393,8 +394,8 @@ function InfoModal({
       <div className="info-modal" onClick={(e) => e.stopPropagation()}>
         <div className="info-modal__header">
           <h3 className="info-modal__title">{title}</h3>
-          <button className="modal__close" onClick={onClose}>
-            ✕
+          <button className="modal__close" onClick={onClose} aria-label="Close">
+            <X />
           </button>
         </div>
         <div className="info-modal__body">{children}</div>
@@ -467,7 +468,7 @@ function HowToUseModal({ onClose }: { onClose: () => void }) {
 
       <ModalSection heading="Favorites & Collections">
         <p>
-          Click the ☆ on any code to save it to <strong>Favorites</strong>.
+          Click the star icon on any code to save it to <strong>Favorites</strong>.
           Group related codes into named <strong>Collections</strong> —
           useful for recurring encounters, problem lists, or audit packets.
         </p>
@@ -476,8 +477,9 @@ function HowToUseModal({ onClose }: { onClose: () => void }) {
         </p>
         <p>
           On Favorites, click <strong>Select</strong> to enter multi-select
-          mode: pick rows then 📁 (add to a collection), 📄 (export PDF),
-          or 🗑 (remove).
+          mode: pick rows, then choose <strong>Add to Collection</strong>,{" "}
+          <strong>Export PDF</strong> or <strong>Remove</strong>. Use the
+          export menu in the header to export every favorite as PDF or CSV.
         </p>
       </ModalSection>
 
@@ -494,15 +496,15 @@ function HowToUseModal({ onClose }: { onClose: () => void }) {
           <tbody>
             <tr>
               <td>Collection (CSV)</td>
-              <td>Open a collection → ⋯ menu → Export as CSV</td>
+              <td>Open a collection → export menu → CSV</td>
             </tr>
             <tr>
               <td>Collection (PDF, A4)</td>
-              <td>Open a collection → ⋯ menu → Export as PDF</td>
+              <td>Open a collection → export menu → PDF</td>
             </tr>
             <tr>
               <td>Favorites batch</td>
-              <td>Favorites → Select → 📄 icon</td>
+              <td>Favorites → export menu (all) or Select → Export PDF</td>
             </tr>
           </tbody>
         </table>
@@ -792,9 +794,9 @@ function AboutModal({ onClose }: { onClose: () => void }) {
             into the collection PDF export.
           </li>
           <li>
-            <strong>Multi-select</strong> — click ☐ in Favorites or any
-            open collection to enter selection mode, then 📄 export a
-            subset to PDF or 🗑 remove a batch in one action.
+            <strong>Multi-select</strong> — click Select in Favorites or any
+            open collection, then export a subset to PDF or remove a batch
+            in one action.
           </li>
           <li>
             <strong>Export</strong> — CSV for spreadsheets, PDF (A4)

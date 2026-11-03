@@ -3,6 +3,21 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { getCodeDetail } from "./api";
 import type { Collection, NoteMap } from "./types";
 
+/** What an export needs from a saved code (a Favorite or a CollectionItem). */
+export interface ExportItem {
+  code: string;
+  description: string;
+  isBillable: boolean;
+  chapterDescription: string;
+}
+
+interface ExportOptions {
+  /** File name without extension for the save dialog (default: the list name). */
+  fileStem?: string;
+  /** Heading inside the PDF (default: the list name). */
+  title?: string;
+}
+
 interface ExportEntry {
   code: string;
   description: string;
@@ -33,14 +48,14 @@ export function markEntry<T extends { code: string; description: string; billabl
  *  Block/category aren't stored on the collection item, so they're fetched
  *  fresh from the database at export time. */
 async function buildEntries(
-  c: Collection,
+  items: ExportItem[],
   notes: NoteMap,
   mark?: ExportMark,
 ): Promise<ExportEntry[]> {
   const details = await Promise.all(
-    c.items.map((i) => getCodeDetail(i.code).catch(() => null)),
+    items.map((i) => getCodeDetail(i.code).catch(() => null)),
   );
-  return c.items.map((item, idx) => {
+  return items.map((item, idx) => {
     const d = details[idx];
     return markEntry({
       code: item.code,
@@ -69,20 +84,22 @@ const CSV_HEADER = [
   "Category",
 ];
 
-/** Opens a native save dialog and writes the collection as CSV.
+/** Opens a native save dialog and writes the list as CSV.
  *  Returns false if the user cancelled. */
-export async function exportCollectionCSV(
-  c: Collection,
+export async function exportItemsCSV(
+  name: string,
+  items: ExportItem[],
   notes: NoteMap,
   mark?: ExportMark,
+  opts: ExportOptions = {},
 ): Promise<boolean> {
   const path = await save({
-    defaultPath: `${c.name}.csv`,
+    defaultPath: `${opts.fileStem ?? name}.csv`,
     filters: [{ name: "CSV", extensions: ["csv"] }],
   });
   if (!path) return false;
 
-  const entries = await buildEntries(c, notes, mark);
+  const entries = await buildEntries(items, notes, mark);
   const rows = [
     CSV_HEADER,
     ...entries.map((e) => [
@@ -100,20 +117,30 @@ export async function exportCollectionCSV(
   return true;
 }
 
-/** Opens a native save dialog and writes the collection as a PDF
+/** Opens a native save dialog and writes the list as a PDF
  *  (generated natively in Rust). Returns false if the user cancelled. */
-export async function exportCollectionPDF(
-  c: Collection,
+export async function exportItemsPDF(
+  name: string,
+  items: ExportItem[],
   notes: NoteMap,
   mark?: ExportMark,
+  opts: ExportOptions = {},
 ): Promise<boolean> {
   const path = await save({
-    defaultPath: `${c.name}.pdf`,
+    defaultPath: `${opts.fileStem ?? name}.pdf`,
     filters: [{ name: "PDF", extensions: ["pdf"] }],
   });
   if (!path) return false;
 
-  const entries = await buildEntries(c, notes, mark);
-  await invoke("export_pdf", { path, title: c.name, entries });
+  const entries = await buildEntries(items, notes, mark);
+  await invoke("export_pdf", { path, title: opts.title ?? name, entries });
   return true;
+}
+
+export function exportCollectionCSV(c: Collection, notes: NoteMap, mark?: ExportMark): Promise<boolean> {
+  return exportItemsCSV(c.name, c.items, notes, mark);
+}
+
+export function exportCollectionPDF(c: Collection, notes: NoteMap, mark?: ExportMark): Promise<boolean> {
+  return exportItemsPDF(c.name, c.items, notes, mark);
 }

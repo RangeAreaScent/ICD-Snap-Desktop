@@ -1,3 +1,5 @@
+import { Check, FileText, Search, Star } from "lucide-react";
+import type { ReactNode } from "react";
 import iconUrl from "../assets/app-icon.png";
 
 interface Props {
@@ -16,19 +18,19 @@ export function OnboardingView({ onDismiss }: Props) {
 
         <div className="onboarding__features">
           <FeatureRow
-            icon="⌕"
+            icon={<Search />}
             text="Find 74,000+ billable codes in seconds"
           />
           <FeatureRow
-            icon="★"
+            icon={<Star />}
             text="Save favorites and organize into collections"
           />
           <FeatureRow
-            icon="✎"
+            icon={<FileText />}
             text="Add notes; export to CSV or PDF"
           />
           <FeatureRow
-            icon="✓"
+            icon={<Check />}
             text="No ads, no subscription. Works offline."
           />
         </div>
@@ -45,7 +47,7 @@ export function OnboardingView({ onDismiss }: Props) {
   );
 }
 
-function FeatureRow({ icon, text }: { icon: string; text: string }) {
+function FeatureRow({ icon, text }: { icon: ReactNode; text: string }) {
   return (
     <div className="onboarding__feature">
       <span className="onboarding__feature-icon">{icon}</span>

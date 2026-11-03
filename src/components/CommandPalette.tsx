@@ -1,3 +1,4 @@
+import { Folders, Search, Settings, Star } from "lucide-react";
 import { Command } from "cmdk";
 import { useEffect, useState } from "react";
 import { searchCodes } from "../api";
@@ -141,7 +142,7 @@ export function CommandPalette({
             onSelect={() => jumpTab("search")}
             className="cmdk-item"
           >
-            <span className="cmdk-item__icon">⌕</span>
+            <span className="cmdk-item__icon"><Search /></span>
             <span className="cmdk-item__label">Search</span>
             <span className="cmdk-item__hint">⌘1</span>
           </Command.Item>
@@ -150,7 +151,7 @@ export function CommandPalette({
             onSelect={() => jumpTab("favorites")}
             className="cmdk-item"
           >
-            <span className="cmdk-item__icon">★</span>
+            <span className="cmdk-item__icon"><Star /></span>
             <span className="cmdk-item__label">Favorites</span>
             <span className="cmdk-item__hint">⌘2</span>
           </Command.Item>
@@ -159,7 +160,7 @@ export function CommandPalette({
             onSelect={() => jumpTab("collections")}
             className="cmdk-item"
           >
-            <span className="cmdk-item__icon">🗂</span>
+            <span className="cmdk-item__icon"><Folders /></span>
             <span className="cmdk-item__label">Collections</span>
             <span className="cmdk-item__hint">⌘3</span>
           </Command.Item>
@@ -168,7 +169,7 @@ export function CommandPalette({
             onSelect={() => jumpTab("settings")}
             className="cmdk-item"
           >
-            <span className="cmdk-item__icon">⚙</span>
+            <span className="cmdk-item__icon"><Settings /></span>
             <span className="cmdk-item__label">Settings</span>
             <span className="cmdk-item__hint">⌘,</span>
           </Command.Item>

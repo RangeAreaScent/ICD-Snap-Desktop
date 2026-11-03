@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { Folders, Search, Settings, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import "./styles.css";
@@ -252,26 +254,26 @@ function AppShell() {
           <div className="rail__brand">ICD</div>
           <RailTab
             label="Search"
-            icon="⌕"
+            icon={<Search />}
             active={tab === "search"}
             onClick={() => setTab("search")}
           />
           <RailTab
             label="Favorites"
-            icon="★"
+            icon={<Star />}
             active={tab === "favorites"}
             onClick={() => setTab("favorites")}
           />
           <RailTab
             label="Collections"
-            icon="🗂"
+            icon={<Folders />}
             active={tab === "collections"}
             onClick={() => setTab("collections")}
           />
           <div className="rail__spacer" />
           <RailTab
             label="Settings"
-            icon="⚙"
+            icon={<Settings />}
             active={tab === "settings"}
             onClick={() => setTab("settings")}
           />
@@ -336,7 +338,7 @@ function RailTab({
   onClick,
 }: {
   label: string;
-  icon: string;
+  icon: ReactNode;
   active: boolean;
   onClick: () => void;
 }) {

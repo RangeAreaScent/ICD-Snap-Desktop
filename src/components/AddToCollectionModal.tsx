@@ -1,3 +1,4 @@
+import { Check, Plus } from "lucide-react";
 import { useState } from "react";
 import { useAppData } from "../state";
 import type { SearchResult } from "../types";
@@ -47,7 +48,7 @@ export function AddToCollectionModal({ item, onClose }: Props) {
         className="btn btn--block"
         onClick={() => setCreating(true)}
       >
-        ＋ New collection
+        <Plus className="ico-inline" /> New collection
       </button>
       {collections.length === 0 ? (
         <p className="modal-empty">No collections yet.</p>
@@ -68,7 +69,7 @@ export function AddToCollectionModal({ item, onClose }: Props) {
                 <span className="pick-row__emoji">{c.emoji}</span>
                 <span className="pick-row__name">{c.name}</span>
                 <span className="pick-row__count">{c.items.length}</span>
-                <span className="pick-row__check">{inside ? "✓" : ""}</span>
+                <span className="pick-row__check">{inside ? <Check /> : null}</span>
               </button>
             );
           })}

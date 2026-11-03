@@ -2157,3 +2157,82 @@ button {
   from { opacity: 0; transform: translate(-50%, 6px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* ---- Lucide icons (MIT/ISC, bundled via lucide-react) ----
+   Sized by the parent's font-size and coloured by currentColor, so every
+   theme and the hover/disabled states carry over. Same set as Hangar Snap
+   and Tax Law Snap. */
+.lucide {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  stroke-width: 1.9;
+}
+.ico-inline {
+  vertical-align: -0.15em;
+  margin-inline: 0.1em;
+}
+.rail__icon { display: inline-flex; }
+.star-btn,
+.icon-btn,
+.pane-header__action,
+.back-btn,
+.modal__close,
+.search-bar__icon,
+.search-bar__clear,
+.cmdk-item__icon,
+.onboarding__feature-icon,
+.pick-row__check,
+.theme-card__check,
+.theme-swatch__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Header tool group: several icon buttons right-aligned. */
+.pane-header__tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pane-header__tools .pane-header__action { margin-left: 0; }
+.pane-header__action:disabled { opacity: 0.4; cursor: default; }
+
+/* Menu rows: label left, icon right (Tax Law Snap pattern). */
+.menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.menu__item .lucide { color: var(--text-dim); font-size: 15px; }
+
+/* Filter box under a list header. */
+.filter-input {
+  margin: 8px 14px 4px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--pane);
+  color: var(--text);
+  font-size: 13px;
+  width: calc(100% - 28px);
+}
+.filter-input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+/* Select-mode bar: count + labelled actions. */
+.select-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+.select-bar__count { font-weight: 600; margin-right: 4px; }
+.select-bar__done { margin-left: auto; }
+.btn--small { padding: 4px 9px; font-size: 12px; }

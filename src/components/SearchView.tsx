@@ -1,3 +1,4 @@
+import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { searchCodes } from "../api";
 import { useListKeyNav } from "../hooks/useListKeyNav";
@@ -61,7 +62,7 @@ export function SearchView({ selectedCode, onSelect }: Props) {
   return (
     <div className="list-pane">
       <div className="search-bar">
-        <span className="search-bar__icon">⌕</span>
+        <span className="search-bar__icon"><Search /></span>
         <input
           ref={inputRef}
           className="search-bar__input"
@@ -76,8 +77,9 @@ export function SearchView({ selectedCode, onSelect }: Props) {
             className="search-bar__clear"
             onClick={() => setQuery("")}
             title="Clear"
+            aria-label="Clear search"
           >
-            ✕
+            <X />
           </button>
         )}
       </div>
