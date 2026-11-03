@@ -9,7 +9,6 @@ import {
 } from "react";
 import { getCurrentRows, storeRead, storeWrite } from "./api";
 import { missingFrom, refreshCollections, refreshFavorites } from "./reconcile";
-import { useSettings } from "./settings";
 import type {
   Collection,
   CollectionItem,
@@ -17,10 +16,6 @@ import type {
   NoteMap,
   SearchResult,
 } from "./types";
-
-/** Free-tier capacity. Premium unlocks unlimited. */
-export const FREE_FAVORITES_MAX = 15;
-export const FREE_COLLECTIONS_MAX = 10;
 
 /** Loads a JSON document once, then persists every change atomically. */
 function usePersistentState<T>(
@@ -77,7 +72,7 @@ interface AppData {
   removeFavorite: (code: string) => void;
 
   collections: Collection[];
-  createCollection: (name: string, emoji: string) => string | null;
+  createCollection: (name: string, emoji: string) => string;
   renameCollection: (id: string, name: string, emoji: string) => void;
   deleteCollection: (id: string) => void;
   addToCollection: (id: string, item: SearchResult) => void;
@@ -88,19 +83,11 @@ interface AppData {
   setNote: (code: string, text: string) => void;
   deleteNote: (code: string) => void;
 
-  /** Effective caps — Infinity when premium is unlocked. */
-  favoritesMax: number;
-  collectionsMax: number;
-  /** A pending "this needs premium" message, or null. */
-  premiumPrompt: string | null;
-  promptPremium: (message: string) => void;
-  clearPremiumPrompt: () => void;
 }
 
 const AppDataContext = createContext<AppData | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
-  const { unlocked } = useSettings();
   const [favorites, updateFavorites, favReady] = usePersistentState<Favorite[]>(
     "favorites",
     [],
@@ -112,7 +99,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     "notes",
     {},
   );
-  const [premiumPrompt, setPremiumPrompt] = useState<string | null>(null);
   const [missing, setMissing] = useState<Set<string>>(() => new Set());
   const reconciled = useRef(false);
 
@@ -142,14 +128,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const isMissing = useCallback((code: string) => missing.has(code), [missing]);
 
-  const favoritesMax = unlocked ? Infinity : FREE_FAVORITES_MAX;
-  const collectionsMax = unlocked ? Infinity : FREE_COLLECTIONS_MAX;
-
-  const promptPremium = useCallback((message: string) => {
-    setPremiumPrompt(message);
-  }, []);
-  const clearPremiumPrompt = useCallback(() => setPremiumPrompt(null), []);
-
   const isFavorite = useCallback(
     (code: string) => favorites.some((f) => f.code === code),
     [favorites],
@@ -157,15 +135,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const toggleFavorite = useCallback(
     (item: SearchResult) => {
-      const exists = favorites.some((f) => f.code === item.code);
-      // Removing is always allowed; only adding past the cap is blocked.
-      if (!exists && favorites.length >= favoritesMax) {
-        setPremiumPrompt(
-          `The free plan keeps up to ${FREE_FAVORITES_MAX} favorites. ` +
-            `Unlock unlimited favorites with premium.`,
-        );
-        return;
-      }
       updateFavorites((prev) => {
         if (prev.some((f) => f.code === item.code)) {
           return prev.filter((f) => f.code !== item.code);
@@ -182,7 +151,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         ];
       });
     },
-    [favorites, favoritesMax, updateFavorites],
+    [updateFavorites],
   );
 
   const removeFavorite = useCallback(
@@ -193,14 +162,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   );
 
   const createCollection = useCallback(
-    (name: string, emoji: string): string | null => {
-      if (collections.length >= collectionsMax) {
-        setPremiumPrompt(
-          `The free plan keeps up to ${FREE_COLLECTIONS_MAX} collections. ` +
-            `Unlock unlimited collections with premium.`,
-        );
-        return null;
-      }
+    (name: string, emoji: string): string => {
       const id = crypto.randomUUID();
       updateCollections((prev) => [
         ...prev,
@@ -208,7 +170,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       ]);
       return id;
     },
-    [collections, collectionsMax, updateCollections],
+    [updateCollections],
   );
 
   const renameCollection = useCallback(
@@ -302,11 +264,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         notes,
         setNote,
         deleteNote,
-        favoritesMax,
-        collectionsMax,
-        premiumPrompt,
-        promptPremium,
-        clearPremiumPrompt,
       }}
     >
       {children}

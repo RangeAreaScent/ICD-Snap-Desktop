@@ -16,7 +16,6 @@ import {
   type FontFamily,
   type Theme,
 } from "../settings";
-import { FREE_COLLECTIONS_MAX, FREE_FAVORITES_MAX, useAppData } from "../state";
 
 const FONT_PREVIEW: Record<FontFamily, string> = {
   system: '-apple-system, "Segoe UI", Roboto, sans-serif',
@@ -251,7 +250,6 @@ function PremiumSection({
   activateLicense: (key: string) => Promise<void>;
   deactivateLicense: () => Promise<void>;
 }) {
-  const { favorites, collections } = useAppData();
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -306,13 +304,11 @@ function PremiumSection({
         <div className="premium-box">
           <p className="premium-box__text">
             ICD Snap is free to use. A one-time premium license unlocks all
-            four premium themes plus unlimited favorites and collections.
+            four premium themes.
           </p>
           <p className="premium-box__text">
-            Free plan: {favorites.length} / {FREE_FAVORITES_MAX} favorites
-            {" · "}
-            {collections.length} / {FREE_COLLECTIONS_MAX} collections. Notes
-            and export are always unlimited.
+            Search, favorites, collections, notes and export are always free
+            and unlimited.
           </p>
           <button
             className="btn btn--primary"
@@ -474,8 +470,7 @@ function HowToUseModal({ onClose }: { onClose: () => void }) {
           useful for recurring encounters, problem lists, or audit packets.
         </p>
         <p className="howto-note">
-          Free plan: up to {FREE_FAVORITES_MAX} favorites and{" "}
-          {FREE_COLLECTIONS_MAX} collections. Premium removes both limits.
+          Favorites and collections have no limits.
         </p>
         <p>
           On Favorites, click <strong>Select</strong> to enter multi-select
@@ -780,13 +775,12 @@ function AboutModal({ onClose }: { onClose: () => void }) {
           <li>
             <strong>Star a code</strong> — the ones you reach for during
             an audit or a recurring patient profile go into{" "}
-            <em>Favorites</em>. Up to 15 on the free plan, unlimited on
-            premium.
+            <em>Favorites</em>. There is no limit.
           </li>
           <li>
             <strong>Group codes into collections</strong> — one
             collection per problem list, per audit packet, per teaching
-            case. Up to 10 on the free plan, unlimited on premium.
+            case. There is no limit.
           </li>
           <li>
             <strong>Annotate</strong> — every code carries a personal
@@ -815,13 +809,12 @@ function AboutModal({ onClose }: { onClose: () => void }) {
 
       <ModalSection heading="Free for Everyone">
         <p>
-          ICD Snap is free to use. Every search, every favorite (up to
-          15), every collection (up to 10), every note, every export is
+          ICD Snap is free to use. Every search, every favorite, every
+          collection, every note, every export is
           unlocked by default — no ads, no subscription, no account.
         </p>
         <p>
-          A one-time premium license unlocks all four premium themes and
-          removes both free-plan capacity limits. It's a genuine help if
+          A one-time premium license unlocks all four premium themes. It's a genuine help if
           the app earns its place on your dock.{" "}
           <a
             href="#"

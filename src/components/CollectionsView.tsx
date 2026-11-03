@@ -40,20 +40,11 @@ export function CollectionsView({ selectedCode, onSelect }: Props) {
 }
 
 function CollectionList({ onOpen }: { onOpen: (id: string) => void }) {
-  const { collections, createCollection, collectionsMax, promptPremium } =
-    useAppData();
+  const { collections, createCollection } = useAppData();
   const [creating, setCreating] = useState(false);
 
-  const atLimit = collections.length >= collectionsMax;
   function startNew() {
-    if (atLimit) {
-      promptPremium(
-        "The free plan keeps up to 10 collections. " +
-          "Unlock unlimited collections with premium.",
-      );
-    } else {
-      setCreating(true);
-    }
+    setCreating(true);
   }
 
   return (

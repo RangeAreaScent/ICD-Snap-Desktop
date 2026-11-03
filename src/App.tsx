@@ -7,7 +7,6 @@ import { CollectionsView } from "./components/CollectionsView";
 import { CommandPalette } from "./components/CommandPalette";
 import { FavoritesView } from "./components/FavoritesView";
 import { OnboardingView } from "./components/OnboardingView";
-import { PremiumPromptModal } from "./components/PremiumPromptModal";
 import { SearchView } from "./components/SearchView";
 import { SettingsView } from "./components/SettingsView";
 import { Splitter } from "./components/Splitter";
@@ -59,8 +58,7 @@ function AppShell() {
   const [narrowDetailOpen, setNarrowDetailOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsPanel, setSettingsPanel] = useState<InfoPanel>(null);
-  const { premiumPrompt, clearPremiumPrompt, isFavorite, toggleFavorite, removeFavorite } =
-    useAppData();
+  const { isFavorite, toggleFavorite, removeFavorite } = useAppData();
   const { hasSeenOnboarding, dismissOnboarding } = useSettings();
 
   // Phase A — global desktop shortcuts.
@@ -310,17 +308,6 @@ function AppShell() {
         </main>
       </div>{/* /.app__main */}
       <StatusBar />
-
-      {premiumPrompt && (
-        <PremiumPromptModal
-          message={premiumPrompt}
-          onClose={clearPremiumPrompt}
-          onGoSettings={() => {
-            clearPremiumPrompt();
-            setTab("settings");
-          }}
-        />
-      )}
 
       {!hasSeenOnboarding && (
         <OnboardingView onDismiss={dismissOnboarding} />
