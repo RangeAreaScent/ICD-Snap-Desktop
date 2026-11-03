@@ -1,3 +1,4 @@
+import { useDataset } from "../dataset";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { openGumroadPurchasePage } from "../api";
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export function SettingsView({ initialPanel = null, onPanelChange }: Props = {}) {
+  const ds = useDataset();
   const {
     theme,
     setTheme,
@@ -186,8 +188,8 @@ export function SettingsView({ initialPanel = null, onPanelChange }: Props = {})
         <section className="settings-section">
           <h2 className="settings-heading">Data</h2>
           <InfoRow label="Source" value="CDC / NCHS (public domain)" />
-          <InfoRow label="Snapshot" value="FY 2026 · 2025-10-01" />
-          <InfoRow label="Coverage" value="74,714 billable codes" />
+          <InfoRow label="Snapshot" value={`${ds.label} · ${ds.effectiveDate}`} />
+          <InfoRow label="Coverage" value={`${ds.billableLabel} billable codes`} />
           <InfoRow label="Update cadence" value="Annual · Oct 1 (U.S. FY)" />
           <NavRow label="Database Details" onClick={() => setPanel("database")} />
         </section>
@@ -611,6 +613,7 @@ function HowToUseModal({ onClose }: { onClose: () => void }) {
 }
 
 function DatabaseModal({ onClose }: { onClose: () => void }) {
+  const ds = useDataset();
   return (
     <InfoModal title="Database Details" onClose={onClose}>
       <ModalSection heading="Source">
@@ -633,7 +636,7 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
             </tr>
             <tr>
               <td>Snapshot</td>
-              <td>FY 2026 · effective 2025-10-01</td>
+              <td>{ds.label} · effective {ds.effectiveDate}</td>
             </tr>
             <tr>
               <td>Base</td>
@@ -648,7 +651,7 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
           <tbody>
             <tr>
               <td>Billable codes</td>
-              <td>74,714</td>
+              <td>{ds.billableLabel}</td>
             </tr>
             <tr>
               <td>Total code rows (incl. parents)</td>
@@ -672,7 +675,7 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
 
       <ModalSection heading="What's Included">
         <ul>
-          <li>All ICD-10-CM codes for FY 2026 (effective 2025-10-01)</li>
+          <li>All ICD-10-CM codes for {ds.label} (effective {ds.effectiveDate})</li>
           <li>Billable / non-billable flag per code</li>
           <li>
             Chapter, block, and category descriptions for every code
@@ -713,8 +716,8 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
       <ModalSection heading="Update Cadence">
         <p>
           ICD-10-CM is refreshed <strong>annually</strong> by CDC for the
-          U.S. fiscal year (October 1 cutover). The next refresh will
-          target <strong>FY 2027</strong>, expected October 2026.
+          U.S. fiscal year (October 1 cutover). The next refresh follows
+          CDC's next annual release.
         </p>
       </ModalSection>
 
@@ -733,6 +736,7 @@ function DatabaseModal({ onClose }: { onClose: () => void }) {
 }
 
 function AboutModal({ onClose }: { onClose: () => void }) {
+  const ds = useDataset();
   return (
     <InfoModal title="About ICD Snap" onClose={onClose}>
       <div className="info-modal__app-header">
@@ -753,7 +757,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
         </p>
         <p>
           <strong>ICD Snap never asks for the network.</strong> The full
-          FY 2026 release (~74,714 billable codes + chapter, block, and
+          {ds.label} release (~{ds.billableLabel} billable codes + chapter, block, and
           category context) is bundled into the app as a 40 MB SQLite
           file with an FTS5 index. Open the app on a plane, in a clinic
           basement, behind a hospital firewall, on a coding-audit field
@@ -838,7 +842,7 @@ function AboutModal({ onClose }: { onClose: () => void }) {
           <strong>CDC / NCHS ICD-10-CM annual release</strong> — the
           authoritative U.S. clinical modification of WHO's ICD-10
           classification, published in the public domain. The bundled
-          snapshot is FY 2026 (effective 2025-10-01). Refreshed annually
+          snapshot is {ds.label} (effective {ds.effectiveDate}). Refreshed annually
           for each new U.S. fiscal year (October 1 cutover).
         </p>
         <p className="info-modal__ogl">

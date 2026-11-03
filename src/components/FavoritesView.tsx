@@ -1,3 +1,5 @@
+import { useDataset } from "../dataset";
+import { markEntry } from "../export";
 import { ask, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
@@ -13,7 +15,8 @@ interface Props {
 }
 
 export function FavoritesView({ selectedCode, onSelect }: Props) {
-  const { favorites, isFavorite, toggleFavorite, removeFavorite } = useAppData();
+  const { favorites, isFavorite, toggleFavorite, removeFavorite, isMissing } = useAppData();
+  const ds = useDataset();
 
   /** Polish §10.3 — multi-select mode for bulk add-to-collection / export /
    * removal. When `selecting` is true, ↑↓ navigation is disabled (rows
@@ -78,15 +81,20 @@ export function FavoritesView({ selectedCode, onSelect }: Props) {
       await invoke("export_pdf", {
         path,
         title: `Favorites (${items.length} codes)`,
-        entries: items.map((f) => ({
-          code: f.code,
-          description: f.description,
-          note: "",
-          billable: f.isBillable ? "Yes" : "No",
-          chapter: f.chapterDescription,
-          block: "",
-          category: "",
-        })),
+        entries: items.map((f) =>
+          markEntry(
+            {
+              code: f.code,
+              description: f.description,
+              note: "",
+              billable: f.isBillable ? "Yes" : "No",
+              chapter: f.chapterDescription,
+              block: "",
+              category: "",
+            },
+            { isMissing, label: ds.missingLabel },
+          ),
+        ),
       });
       showToast("PDF saved");
       cancelSelect();
@@ -193,7 +201,9 @@ export function FavoritesView({ selectedCode, onSelect }: Props) {
                 <div className="code-row__main">
                   <div className="code-row__top">
                     <span className="code-row__code">{fav.code}</span>
-                    {fav.isBillable ? (
+                    {isMissing(fav.code) ? (
+                      <span className="badge badge--missing">{ds.missingLabel}</span>
+                    ) : fav.isBillable ? (
                       <span className="badge badge--billable">Billable</span>
                     ) : (
                       <span className="badge badge--nonbillable">

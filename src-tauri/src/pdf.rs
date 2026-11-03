@@ -185,7 +185,7 @@ impl Layout {
     }
 }
 
-pub fn export(path: &str, title: &str, entries: &[ExportEntry]) -> Result<(), String> {
+pub fn export(path: &str, title: &str, entries: &[ExportEntry], edition: &str) -> Result<(), String> {
     let mut doc = PdfDocument::new(title);
     let regular = ParsedFont::from_bytes(NANUM_REGULAR, 0, &mut Vec::new())
         .ok_or_else(|| "failed to parse embedded font".to_string())?;
@@ -199,7 +199,7 @@ pub fn export(path: &str, title: &str, entries: &[ExportEntry]) -> Result<(), St
     layout.text(title, 18.0, 0.0, true);
     layout.gap(1.5);
     layout.text(
-        &format!("{} codes  -  ICD-10-CM FY 2026", entries.len()),
+        &format!("{} codes  -  ICD-10-CM {}", entries.len(), edition),
         9.0,
         0.0,
         false,
@@ -259,7 +259,7 @@ mod tests {
         let entries: Vec<ExportEntry> = (0..40)
             .map(|i| entry(&format!("I{i:02}"), if i % 3 == 0 { "Check coverage" } else { "" }))
             .collect();
-        export(path, "Test Collection", &entries).expect("export should succeed");
+        export(path, "Test Collection", &entries, "FY 2027").expect("export should succeed");
 
         let bytes = std::fs::read(path).expect("output file should exist");
         assert_eq!(&bytes[..5], b"%PDF-", "missing PDF header");
@@ -271,7 +271,7 @@ mod tests {
         let path = std::env::temp_dir().join("icdsnap_pdf_korean.pdf");
         let path = path.to_str().unwrap();
         let entries = vec![entry("I10", "환자 본태성 고혈압 — 보험 확인 필요")];
-        export(path, "고혈압 모음", &entries).expect("korean export should succeed");
+        export(path, "고혈압 모음", &entries, "FY 2027").expect("korean export should succeed");
 
         let bytes = std::fs::read(path).expect("output file should exist");
         assert_eq!(&bytes[..5], b"%PDF-", "missing PDF header");

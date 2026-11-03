@@ -15,6 +15,7 @@ import { StatusBar } from "./components/StatusBar";
 import { showToast, Toaster } from "./components/Toaster";
 import { AppDataProvider, useAppData } from "./state";
 import { SettingsProvider, useSettings } from "./settings";
+import { DatasetProvider } from "./dataset";
 
 type Tab = "search" | "favorites" | "collections" | "settings";
 type InfoPanel = "howToUse" | "database" | "about" | null;
@@ -22,9 +23,11 @@ type InfoPanel = "howToUse" | "database" | "about" | null;
 function App() {
   return (
     <SettingsProvider>
+      <DatasetProvider>
       <AppDataProvider>
         <AppShell />
       </AppDataProvider>
+      </DatasetProvider>
     </SettingsProvider>
   );
 }

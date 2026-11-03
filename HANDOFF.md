@@ -5,13 +5,13 @@
 - **Platform:** desktop
 - **Wave:** 1
 - **Stage:** 2 features  (0 spec / 1 scaffold / 2 features / 3 release / shipped) — bumped back from 3 release after Phase A~D + Polish UX work on 2026-06-09; the Phase A~D + Polish UI work itself is still un-smoke-tested and still needs its own v1.1.0 (see "Next 3 steps" — unrelated to the v1.0.1 bump below)
-- **Last updated:** 2026-08-06
+- **Last updated:** 2026-11-03
 - **Repo:** https://github.com/RangeAreaScent/ICD-Snap-Desktop
 - **Latest release:** v1.0.0 — **published** 2026-08-06 (was a draft since 2026-05-29; still pre-dates Phase A~D + Polish, but the user chose to publish it anyway for real cross-Mac testing convenience — see §6.5). A signed + notarized universal Mac DMG is live on this release and linked from the marketing site (`doie.cc/snap/icd-snap`, macOS "Download for Mac" badge → direct GitHub asset). v1.0.1 (Gumroad + signing/override fixes below) is about to be tagged on top of this — same release lineage, not a separate stale draft.
 - **Latest CI:** success on v1.0.0 (Windows-only, commit `4b1c1d0`, **pre-dates** the 2026-08-06 Gumroad/override changes — that Windows .msi/.exe is stale, still Lemon Squeezy + hidden override, unsigned). v1.0.1 CI run is what will pick up today's changes. Mac DMG for v1.0.0 built locally via `tauri build` + `hdiutil` fallback (§13 gotcha #6), signed + notarized successfully with the DOIE LLC Developer ID cert (§6.5 verify recipe passed: codesign / spctl / stapler all green).
 - **Bundle id:** cc.doie.icdsnap
-- **Dataset:** `icd10cm_2026.sqlite`, ~98K rows (74,714 billable), 40 MB, license: public domain (CDC / NCHS)
-- **Dataset update cadence:** Annual (Oct 1, U.S. FY rollover), next refresh window 2026-10 for FY 2027
+- **Dataset:** `icd10cm_2027.sqlite` (FY 2027, effective 2026-10-01), 98,403 rows (74,879 billable), 38 MB, with a `meta` table the app reads for every version label; license: public domain (CDC / NCHS). Built by `ICD Snap/ICD-10_2027/build_icd_db.py` (see its README to rebuild next year).
+- **Dataset update cadence:** Annual (Oct 1, U.S. FY rollover). FY 2027 shipped in v1.0.3 (2026-11-03)
 - **Deviations from playbook (4-tab ICD vs Tariff UK 6-tab reference):**
   - No Calculator tab (ICD is reference-only, no dollar math)
   - No Browse tab (chapter browse deferred — FTS5 search covers most discovery)
@@ -32,7 +32,7 @@
 - **Report-back trigger:** any `v*` tag push, any commit touching `license.rs` / `tauri.conf.json` / `.github/workflows/` / `src-tauri/src/menu.rs`, any Gumroad milestone, any signing config change, any new dataset bundled, any further IMPROVEMENT_PLAN Polish round
 <!-- snap-series:manager-block:end -->
 
-> Last updated 2026-08-06. App version 1.0.2.
+> Last updated 2026-11-03. App version 1.0.3.
 > Repository: <https://github.com/RangeAreaScent/ICD-Snap-Desktop>
 >
 > **Series context.** ICD Snap is one of ten apps in the Snap series
@@ -1156,3 +1156,16 @@ Gumroad is a subscription instead.
 ---
 
 *End of handoff.*
+
+
+## 2026-11-03: v1.0.3, FY 2027 data (shared fixes with ICD Snap iOS)
+- Bundled data replaced: FY 2026 -> **FY 2027** (`icd10cm_2027.sqlite`). The FY 2026 file was also missing 5 billable 3-character codes
+  (`B20`, `F99`, `P84`, `R99`, `Z66`) and 34 category nodes, and 527 seventh-character codes had synthesized text ("..., stable/Old ...").
+  All fixed in the new build. Counts equal CDC's `icd10cm-order-2027.txt`.
+- No screen hard-codes a fiscal year or count any more: `get_dataset_info` (Rust, reads `meta`) -> `src/dataset.tsx` -> status bar, Settings,
+  Database/About modals; PDF header uses the same value.
+- Search: a code typed without the decimal ("E1165") now finds `E11.65` (claim files omit the dot); a single-digit word ("type 2 diabetes")
+  is no longer dropped. Rust tests in `src-tauri/src/icd.rs`.
+- Saved favorites/collection items: at launch `src/reconcile.ts` refreshes their stored description/billable flag from the bundled data and
+  flags codes the data no longer contains with an orange "Not in FY 2027" badge; exports mark them non-billable with `[Not in FY 2027]`.
+- Known, not changed: free-tier caps (15 favorites, 10 collections) still gate core features; Hangar removed its equivalent caps.

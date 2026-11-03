@@ -532,6 +532,12 @@ button {
   background: var(--nonbillable-bg);
 }
 
+/* A saved code the bundled data no longer contains. */
+.badge--missing {
+  color: #fff;
+  background: #d9730d;
+}
+
 /* ---- star ---- */
 .star-btn {
   font-size: 17px;

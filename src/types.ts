@@ -18,6 +18,14 @@ export interface CodeDetail {
   categoryDescription: string;
 }
 
+/** Version of the bundled ICD-10-CM data (from the database's meta table). */
+export interface DatasetInfo {
+  fiscalYear: string;
+  effectiveDate: string;
+  billableCount: number;
+  entryCount: number;
+}
+
 export interface Favorite {
   code: string;
   description: string;

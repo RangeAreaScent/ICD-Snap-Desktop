@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { storeRead, storeWrite } from "./api";
+import { getCurrentRows, storeRead, storeWrite } from "./api";
+import { missingFrom, refreshCollections, refreshFavorites } from "./reconcile";
 import { useSettings } from "./settings";
 import type {
   Collection,
@@ -69,6 +70,8 @@ interface AppData {
   ready: boolean;
 
   favorites: Favorite[];
+  /** True when a saved code is no longer in the bundled ICD-10-CM data. */
+  isMissing: (code: string) => boolean;
   isFavorite: (code: string) => boolean;
   toggleFavorite: (item: SearchResult) => void;
   removeFavorite: (code: string) => void;
@@ -110,6 +113,34 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     {},
   );
   const [premiumPrompt, setPremiumPrompt] = useState<string | null>(null);
+  const [missing, setMissing] = useState<Set<string>>(() => new Set());
+  const reconciled = useRef(false);
+
+  // Once the saved lists are loaded, bring their snapshots up to date with the
+  // bundled data and flag codes it no longer contains (data refresh each October).
+  useEffect(() => {
+    if (!favReady || !colReady || reconciled.current) return;
+    reconciled.current = true;
+    const codes = [
+      ...new Set([
+        ...favorites.map((f) => f.code),
+        ...collections.flatMap((c) => c.items.map((i) => i.code)),
+      ]),
+    ];
+    if (codes.length === 0) return;
+    getCurrentRows(codes)
+      .then((list) => {
+        const rows = new Map(list.map((r) => [r.code, r]));
+        updateFavorites((prev) => refreshFavorites(prev, rows));
+        updateCollections((prev) => refreshCollections(prev, rows));
+        setMissing(missingFrom(codes, rows));
+      })
+      .catch((e) => console.error("failed to refresh saved codes:", e));
+    // Runs once, when the lists first become ready.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favReady, colReady]);
+
+  const isMissing = useCallback((code: string) => missing.has(code), [missing]);
 
   const favoritesMax = unlocked ? Infinity : FREE_FAVORITES_MAX;
   const collectionsMax = unlocked ? Infinity : FREE_COLLECTIONS_MAX;
@@ -257,6 +288,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       value={{
         ready: favReady && colReady && notesReady,
         favorites,
+        isMissing,
         isFavorite,
         toggleFavorite,
         removeFavorite,

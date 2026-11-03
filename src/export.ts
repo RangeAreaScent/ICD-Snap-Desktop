@@ -13,19 +13,36 @@ interface ExportEntry {
   category: string;
 }
 
+/** Marks saved codes that the current data no longer contains: they are exported
+ *  as non-billable with "[Not in FY 20xx]" after the description. */
+export interface ExportMark {
+  isMissing: (code: string) => boolean;
+  label: string;
+}
+
+export function markEntry<T extends { code: string; description: string; billable: string }>(
+  entry: T,
+  mark?: ExportMark,
+): T {
+  return mark?.isMissing(entry.code)
+    ? { ...entry, description: `${entry.description} [${mark.label}]`, billable: "No" }
+    : entry;
+}
+
 /** Enriches collection items with full CDC classification + the saved note.
  *  Block/category aren't stored on the collection item, so they're fetched
  *  fresh from the database at export time. */
 async function buildEntries(
   c: Collection,
   notes: NoteMap,
+  mark?: ExportMark,
 ): Promise<ExportEntry[]> {
   const details = await Promise.all(
     c.items.map((i) => getCodeDetail(i.code).catch(() => null)),
   );
   return c.items.map((item, idx) => {
     const d = details[idx];
-    return {
+    return markEntry({
       code: item.code,
       description: d?.description ?? item.description,
       note: notes[item.code]?.text ?? "",
@@ -33,7 +50,7 @@ async function buildEntries(
       chapter: d?.chapterDescription ?? item.chapterDescription,
       block: d?.blockDescription ?? "",
       category: d?.categoryDescription ?? "",
-    };
+    }, mark);
   });
 }
 
@@ -57,6 +74,7 @@ const CSV_HEADER = [
 export async function exportCollectionCSV(
   c: Collection,
   notes: NoteMap,
+  mark?: ExportMark,
 ): Promise<boolean> {
   const path = await save({
     defaultPath: `${c.name}.csv`,
@@ -64,7 +82,7 @@ export async function exportCollectionCSV(
   });
   if (!path) return false;
 
-  const entries = await buildEntries(c, notes);
+  const entries = await buildEntries(c, notes, mark);
   const rows = [
     CSV_HEADER,
     ...entries.map((e) => [
@@ -87,6 +105,7 @@ export async function exportCollectionCSV(
 export async function exportCollectionPDF(
   c: Collection,
   notes: NoteMap,
+  mark?: ExportMark,
 ): Promise<boolean> {
   const path = await save({
     defaultPath: `${c.name}.pdf`,
@@ -94,7 +113,7 @@ export async function exportCollectionPDF(
   });
   if (!path) return false;
 
-  const entries = await buildEntries(c, notes);
+  const entries = await buildEntries(c, notes, mark);
   await invoke("export_pdf", { path, title: c.name, entries });
   return true;
 }

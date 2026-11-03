@@ -1,7 +1,8 @@
 import { ask, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import { exportCollectionCSV, exportCollectionPDF } from "../export";
+import { exportCollectionCSV, exportCollectionPDF, markEntry } from "../export";
+import { useDataset } from "../dataset";
 import { useListKeyNav } from "../hooks/useListKeyNav";
 import { useAppData } from "../state";
 import type { Collection } from "../types";
@@ -118,8 +119,10 @@ function CollectionDetail({
   onSelect,
   onBack,
 }: DetailProps) {
-  const { notes, renameCollection, deleteCollection, removeFromCollection } =
+  const { notes, renameCollection, deleteCollection, removeFromCollection, isMissing } =
     useAppData();
+  const ds = useDataset();
+  const mark = { isMissing, label: ds.missingLabel };
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState<"rename" | "addcode" | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -184,15 +187,20 @@ function CollectionDetail({
       await invoke("export_pdf", {
         path,
         title: `${collection.name} (selection)`,
-        entries: items.map((it) => ({
-          code: it.code,
-          description: it.description,
-          note: notes[it.code]?.text ?? "",
-          billable: it.isBillable ? "Yes" : "No",
-          chapter: it.chapterDescription,
-          block: "",
-          category: "",
-        })),
+        entries: items.map((it) =>
+          markEntry(
+            {
+              code: it.code,
+              description: it.description,
+              note: notes[it.code]?.text ?? "",
+              billable: it.isBillable ? "Yes" : "No",
+              chapter: it.chapterDescription,
+              block: "",
+              category: "",
+            },
+            mark,
+          ),
+        ),
       });
       showToast("PDF saved");
       cancelSelect();
@@ -228,7 +236,7 @@ function CollectionDetail({
   async function exportCSV() {
     setMenuOpen(false);
     try {
-      if (await exportCollectionCSV(collection, notes)) flash("CSV saved");
+      if (await exportCollectionCSV(collection, notes, mark)) flash("CSV saved");
     } catch (e) {
       flash(`Export failed: ${e}`);
     }
@@ -238,7 +246,7 @@ function CollectionDetail({
     setMenuOpen(false);
     if (collection.items.length === 0) return;
     try {
-      if (await exportCollectionPDF(collection, notes)) flash("PDF saved");
+      if (await exportCollectionPDF(collection, notes, mark)) flash("PDF saved");
     } catch (e) {
       flash(`Export failed: ${e}`);
     }
@@ -384,7 +392,9 @@ function CollectionDetail({
                 <div className="code-row__main">
                   <div className="code-row__top">
                     <span className="code-row__code">{item.code}</span>
-                    {item.isBillable ? (
+                    {isMissing(item.code) ? (
+                      <span className="badge badge--missing">{ds.missingLabel}</span>
+                    ) : item.isBillable ? (
                       <span className="badge badge--billable">Billable</span>
                     ) : (
                       <span className="badge badge--nonbillable">
@@ -418,7 +428,9 @@ function CollectionDetail({
               <div className="code-row__main">
                 <div className="code-row__top">
                   <span className="code-row__code">{item.code}</span>
-                  {item.isBillable ? (
+                  {isMissing(item.code) ? (
+                    <span className="badge badge--missing">{ds.missingLabel}</span>
+                  ) : item.isBillable ? (
                     <span className="badge badge--billable">Billable</span>
                   ) : (
                     <span className="badge badge--nonbillable">

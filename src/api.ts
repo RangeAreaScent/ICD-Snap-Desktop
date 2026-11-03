@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { CodeDetail, SearchResult } from "./types";
+import type { CodeDetail, DatasetInfo, SearchResult } from "./types";
 
 /** The Gumroad product page — where a license key actually comes from. */
 export const GUMROAD_PRODUCT_URL = "https://doieuser.gumroad.com/l/ICD-SNAP";
@@ -15,6 +15,15 @@ export function searchCodes(query: string, limit = 50): Promise<SearchResult[]> 
 
 export function getCodeDetail(code: string): Promise<CodeDetail | null> {
   return invoke<CodeDetail | null>("get_code_detail", { code });
+}
+
+export function getDatasetInfo(): Promise<DatasetInfo> {
+  return invoke<DatasetInfo>("get_dataset_info");
+}
+
+/** Current rows for the given codes; codes the data no longer contains are absent. */
+export function getCurrentRows(codes: string[]): Promise<SearchResult[]> {
+  return invoke<SearchResult[]>("get_current_rows", { codes });
 }
 
 /** Reads a JSON document by name. Returns null when it does not exist yet. */

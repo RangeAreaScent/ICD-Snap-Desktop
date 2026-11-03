@@ -1,3 +1,5 @@
+import { useDataset } from "../dataset";
+
 /** Phase D (SNAP_DESKTOP_IMPROVEMENT_PLAN.md) — bottom status bar.
  *
  * Single fixed-height strip at the bottom of the window. Left: dataset
@@ -7,17 +9,16 @@
  * Styles use CSS variables so the status bar follows whichever of the 7
  * themes is active — no per-theme branching needed.
  *
- * Stats are hard-coded for v1 — the bundle is refreshed annually (CDC
- * fiscal year, Oct 1) and these numbers change at the same cadence as
- * the SQLite.
+ * The numbers come from the bundled database's meta table (see dataset.tsx).
  */
 export function StatusBar() {
+  const ds = useDataset();
   return (
     <div className="status-bar" aria-label="Status">
       <div className="status-bar__left">
         <span className="status-bar__dot" aria-hidden />
         <span className="status-bar__text">
-          74,714 billable codes · CDC FY 2026 · ICD-10-CM
+          {ds.billableLabel} billable codes · CDC {ds.label} · ICD-10-CM
         </span>
       </div>
       <div className="status-bar__right">

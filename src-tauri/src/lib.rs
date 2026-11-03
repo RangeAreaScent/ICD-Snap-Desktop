@@ -55,11 +55,29 @@ fn write_text_file(path: String, content: String) -> Result<(), String> {
 /// Renders a collection to a PDF at the user-chosen path.
 #[tauri::command]
 fn export_pdf(
+    state: tauri::State<'_, AppState>,
     path: String,
     title: String,
     entries: Vec<pdf::ExportEntry>,
 ) -> Result<(), String> {
-    pdf::export(&path, &title, &entries)
+    let edition = icd::dataset_info(&state.db_path)?.version_label();
+    pdf::export(&path, &title, &entries, &edition)
+}
+
+/// Version of the bundled ICD-10-CM data (from the database's `meta` table).
+#[tauri::command]
+fn get_dataset_info(state: tauri::State<'_, AppState>) -> Result<icd::DatasetInfo, String> {
+    icd::dataset_info(&state.db_path)
+}
+
+/// Current rows for the given codes. Codes missing from the bundled data are
+/// simply absent from the result.
+#[tauri::command]
+fn get_current_rows(
+    state: tauri::State<'_, AppState>,
+    codes: Vec<String>,
+) -> Result<Vec<icd::SearchResult>, String> {
+    icd::current_rows(&state.db_path, &codes)
 }
 
 /// Returns the locally stored license state without any network call.
@@ -100,7 +118,7 @@ pub fn run() {
         .setup(|app| {
             let db_path = app
                 .path()
-                .resolve("resources/icd10cm_2026.sqlite", tauri::path::BaseDirectory::Resource)
+                .resolve("resources/icd10cm_2027.sqlite", tauri::path::BaseDirectory::Resource)
                 .expect("bundled ICD database resource is missing");
             let data_dir = app
                 .path()
@@ -116,6 +134,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             search_codes,
             get_code_detail,
+            get_dataset_info,
+            get_current_rows,
             store_read,
             store_write,
             write_text_file,
